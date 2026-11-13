@@ -1,82 +1,57 @@
-<style>
-  body, p, li, td, th, code, pre {
-    color: #000000 !important;
-  }
-  code {
-    background-color: #f2f2f2 !important;
-    color: #000000 !important;
-    padding: 1px 4px;
-    border-radius: 3px;
-  }
-</style>
-
-# Especificação das Produções Gramaticais e Regras Semânticas (SDT)
+# Produções Gramaticais e Regras Semânticas (Tabela SDT para a apresentação)
 
 **Disciplina:** Compiladores (2026_2)  
 **Projeto:** Tradutor Tático de Lances de Futebol (Padrão Cartesiano StatsBomb 120x80)  
-**Gerador de Analisadores:** PLY (*Python Lex-Yacc* — **ply.lex** e **ply.yacc**)
+**Gerador:** PLY (`ply.lex` + `ply.yacc`, LALR(1), 0 conflitos)
 
----
+* **Não-terminais (V):** \<Lance\>, \<Confronto\>, \<IntervaloTempo\>, \<Bloco\>, \<SequenciaAcoes\>, \<ElementoTatico\>, \<Jogada\>, \<AcaoAtomica\>, \<TrocaPosse\>, \<Passe\>, \<CadeiaPasse\>, \<Finalizacao\>, \<DesfechoParcial\>, \<Coordenada\>, \<Desfecho\>
+* **Terminais (Σ):** LANCE, VS, FASE, POSSE, TROCA_POSSE, PASSE, FINALIZACAO, RESULTADO, REBOTE, GOL, DEFESA, FORA, TRAVE, TABELA, TRIANGULACAO, CONTRA_ATAQUE, TEMPO, JOGADOR, NUM, SETA ("->"), "[", "]", "-", "{", "}", "(", ")", ",", ";"
+* **Tipo de SDT:** S-atribuída, com um atributo herdado em #21 (portanto **L-atribuída**).
 
-## 1. Visão Geral da Tradução Dirigida pela Sintaxe (SDT)
+## O que há de recursivo (correção pedida pela professora)
 
-O compilador implementa um **Esquema de Tradução S-Atribuído**: todos os atributos são **sintetizados**, fluindo das folhas para a raiz durante as reduções *bottom-up* do analisador sintático LALR(1) do **ply.yacc**.
+| Recursão | Produções | Tipo | Regra semântica própria |
+| :--- | :--- | :--- | :--- |
+| Elementos táticos recursivos | #13 TABELA, #14 TRIANGULACAO, #15 CONTRA_ATAQUE (+ #5–#7 blocos) | auto-incorporação (podem conter uns aos outros) | cada uma **valida** o próprio conteúdo |
+| Passe encadeado `A -> B -> C` | #20–#22 | ação atômica recursiva à **esquerda** | o portador da bola passa de um elo ao outro (atributo herdado em #21) |
+| Finalização com rebote | #24 | ação atômica recursiva à **direita** | numera as tentativas; o desfecho final é o do chute mais interno |
 
-* **Símbolos Não-Terminais (V):** \<Lance\>, \<IntervaloTempo\>, \<Bloco\>, \<SequenciaAcoes\>, \<ElementoTatico\>, \<AcaoAtomica\>, \<TrocaPosse\>, \<Passe\>, \<Finalizacao\>, \<Coordenada\>, \<Desfecho\>
-* **Símbolos Terminais / Tokens (Σ):** **LANCE**, **FASE**, **POSSE**, **TROCA_POSSE**, **PASSE**, **FINALIZACAO**, **RESULTADO**, **GOL**, **DEFESA**, **FORA**, **TRAVE**, **TEMPO**, **JOGADOR**, **NUM**, **SETA** ("->"), "[", "]", "-", "{", "}", "(", ")", ",", ";"
+## Tabela
 
----
-
-## 2. Tabela de Produções e Regras Semânticas (SDT)
-
-Na coluna **Regra Semântica (Notação SDT)** utilizamos a notação clássica de atributos dos slides de *Tradução Dirigida pela Sintaxe* (ex: **X.val**, **X.trad**, **X.lista**), e na coluna à direita mostramos a implementação direta no vetor **p** do **ply.yacc**:
-
-| # | Produção Gramatical (BNF) | Regra Semântica Associada (Notação SDT) | Implementação no ply.yacc (src/parser.py) |
+| # | Produção (BNF) | Regra semântica (notação SDT) | Implementação no ply.yacc (`src/parser.py`) |
 | :-: | :--- | :--- | :--- |
-| **1** | \<Lance\> → **LANCE** \<IntervaloTempo\> \<Bloco\> | Lance.relatorio = gerar_relatorio(IntervaloTempo.val, Bloco.lista) | p[0] = gerar_relatorio_final(p[2], p[3]) |
-| **2** | \<IntervaloTempo\> → '[' **TEMPO₁** '-' **TEMPO₂** ']' | IntervaloTempo.ini = TEMPO₁.lexval<br>IntervaloTempo.fim = TEMPO₂.lexval<br>IntervaloTempo.duracao = seg(TEMPO₂.lexval) - seg(TEMPO₁.lexval) | p[0] = {"inicio": p[2], "fim": p[4], "duracao_seg": seg_fim - seg_ini} |
-| **3** | \<Bloco\> → '{' \<SequenciaAcoes\> '}' | Bloco.lista = SequenciaAcoes.lista | p[0] = p[2] |
-| **4** | \<Bloco\> → **FASE** **JOGADOR** '{' \<SequenciaAcoes\> '}' | Bloco.lista = anotar_fase(JOGADOR.lexval, SequenciaAcoes.lista) | p[0] = anotar_fase(p[2], p[4]) |
-| **5** | \<Bloco\> → **POSSE** **JOGADOR** '{' \<SequenciaAcoes\> '}' | Bloco.lista = anotar_posse_equipe(JOGADOR.lexval, SequenciaAcoes.lista)<br>*(Define de qual equipe são as zonas de Defesa/Meio/Ataque)* | p[0] = anotar_posse(p[2], p[4]) |
-| **6** | \<SequenciaAcoes\> → \<SequenciaAcoes\>₁ \<ElementoTatico\> | SequenciaAcoes.lista = SequenciaAcoes₁.lista + ElementoTatico.lista<br>*(Recursão à esquerda acumulando a lista de ações)* | p[0] = p[1] + p[2] |
-| **7** | \<SequenciaAcoes\> → \<ElementoTatico\> | SequenciaAcoes.lista = ElementoTatico.lista | p[0] = p[1] |
-| **8** | \<ElementoTatico\> → \<AcaoAtomica\> | ElementoTatico.lista = [ AcaoAtomica.trad ] | p[0] = [p[1]] |
-| **9** | \<ElementoTatico\> → \<Bloco\> | ElementoTatico.lista = Bloco.lista<br>*(Auto-incorporação: permite sub-blocos aninhados)* | p[0] = p[1] |
-| **10** | \<AcaoAtomica\> → \<Passe\> ';' | AcaoAtomica.trad = Passe.trad | p[0] = p[1] |
-| **11** | \<AcaoAtomica\> → \<Finalizacao\> ';' | AcaoAtomica.trad = Finalizacao.trad | p[0] = p[1] |
-| **12** | \<AcaoAtomica\> → \<TrocaPosse\> ';' | AcaoAtomica.trad = TrocaPosse.trad | p[0] = p[1] |
-| **13** | \<TrocaPosse\> → **TROCA_POSSE** **JOGADOR** | TrocaPosse.trad = { tipo: "TROCA_POSSE", nova_equipe: JOGADOR.lexval } | p[0] = {"tipo_acao": "TROCA_POSSE", "nova_equipe": p[2]} |
-| **14** | \<Passe\> → **PASSE** **JOGADOR₁** \<Coordenada\>₁ **SETA** **JOGADOR₂** \<Coordenada\>₂ | ΔX = Coordenada₂.x - Coordenada₁.x<br>ΔY = Coordenada₂.y - Coordenada₁.y<br>d = √(ΔX² + ΔY²)<br>z_orig = identificar_zona(Coordenada₁.x, Coordenada₁.y)<br>z_dest = identificar_zona(Coordenada₂.x, Coordenada₂.y)<br>(tipo, dir) = classificar_passe(d, ΔX, ΔY, z_orig, z_dest)<br>Passe.trad = montar_passe(JOGADOR₁.lexval, JOGADOR₂.lexval, d, z_orig, z_dest, tipo, dir) | dist = calcular_distancia(p[3], p[6])<br>z_orig = identificar_zona(...)<br>z_dest = identificar_zona(...)<br>tipo, dir = classificar_passe(...)<br>p[0] = {...} |
-| **15** | \<Finalizacao\> → **FINALIZACAO** **JOGADOR** \<Coordenada\> **RESULTADO** \<Desfecho\> | z_orig = identificar_zona(Coordenada.x, Coordenada.y)<br>Finalizacao.trad = montar_chute(JOGADOR.lexval, z_orig, Desfecho.val) | z_orig = identificar_zona(p[3][0], p[3][1])<br>p[0] = {"tipo_acao": "FINALIZACAO", "autor": p[2], "zona_orig": z_orig, "desfecho": p[5]} |
-| **16** | \<Coordenada\> → '(' **NUM₁** ',' **NUM₂** ')' | Verifica 0 ≤ NUM₁.val ≤ 120 e 0 ≤ NUM₂.val ≤ 80;<br>Coordenada.x = NUM₁.val<br>Coordenada.y = NUM₂.val | p[0] = (p[2], p[4]) |
-| **17** | \<Desfecho\> → **GOL** | Desfecho.val = "GOL!" | p[0] = "GOL!" |
-| **18** | \<Desfecho\> → **DEFESA** | Desfecho.val = "DEFESA DO GOLEIRO!" | p[0] = "DEFESA DO GOLEIRO!" |
-| **19** | \<Desfecho\> → **FORA** | Desfecho.val = "PARA FORA!" | p[0] = "PARA FORA!" |
-| **20** | \<Desfecho\> → **TRAVE** | Desfecho.val = "NA TRAVE!" | p[0] = "NA TRAVE!" |
+| **1** | \<Lance\> → **LANCE** \<IntervaloTempo\> \<Confronto\> \<Bloco\> | Verifica: toda equipe de `Bloco.lista` ∈ `Confronto.val` (se declarado).<br>Lance.relatorio = gerar_relatorio(IntervaloTempo.val, Confronto.val, Bloco.lista) | `p[0] = gerar_relatorio_final(p[2], p[3], p[4])` |
+| **2** | \<Confronto\> → **JOGADOR₁** **VS** **JOGADOR₂** | Verifica JOGADOR₁ ≠ JOGADOR₂.<br>Confronto.val = (JOGADOR₁.lexval, JOGADOR₂.lexval) | `p[0] = (p[1], p[3])` |
+| **3** | \<Confronto\> → ε | Confronto.val = nulo (equipes inferidas das posses) | `p[0] = None` |
+| **4** | \<IntervaloTempo\> → '[' **TEMPO₁** '-' **TEMPO₂** ']' | Verifica seg(TEMPO₂) ≥ seg(TEMPO₁).<br>IntervaloTempo.val = {ini, fim, duracao = seg(TEMPO₂) − seg(TEMPO₁)} | `p[0] = {"inicio": p[2], "fim": p[4], "duracao_seg": ...}` |
+| **5** | \<Bloco\> → '{' \<SequenciaAcoes\> '}' | Bloco.lista = SequenciaAcoes.lista | `p[0] = p[2]` |
+| **6** | \<Bloco\> → **FASE** **JOGADOR** '{' \<SequenciaAcoes\> '}' | Bloco.lista = rotular(SequenciaAcoes.lista, "fase", JOGADOR.lexval) *(rótulo hierárquico "Externa > Interna")* | `p[0] = anotar_rotulo(p[4], "fase", p[2])` |
+| **7** | \<Bloco\> → **POSSE** **JOGADOR** '{' \<SequenciaAcoes\> '}' | Para cada ação sem equipe: acao.equipe = JOGADOR.lexval *(as coordenadas do bloco estão no referencial desta equipe)* | laço que preenche `copia["equipe"] = p[2]` |
+| **8** | \<SequenciaAcoes\> → \<SequenciaAcoes\>₁ \<ElementoTatico\> | SequenciaAcoes.lista = SequenciaAcoes₁.lista + ElementoTatico.lista | `p[0] = p[1] + p[2]` |
+| **9** | \<SequenciaAcoes\> → \<ElementoTatico\> | SequenciaAcoes.lista = ElementoTatico.lista | `p[0] = p[1]` |
+| **10** | \<ElementoTatico\> → \<AcaoAtomica\> | ElementoTatico.lista = AcaoAtomica.lista | `p[0] = p[1]` |
+| **11** | \<ElementoTatico\> → \<Bloco\> | ElementoTatico.lista = Bloco.lista *(auto-incorporação)* | `p[0] = p[1]` |
+| **12** | \<ElementoTatico\> → \<Jogada\> | ElementoTatico.lista = Jogada.lista | `p[0] = p[1]` |
+| **13** | \<Jogada\> → **TABELA** **JOGADOR₁** **JOGADOR₂** '{' \<SequenciaAcoes\> '}' | Verifica: 1º passe = JOGADOR₁→JOGADOR₂ e 2º passe = JOGADOR₂→JOGADOR₁; senão **erro semântico**.<br>Jogada.lista = rotular(SequenciaAcoes.lista, "jogada", "Tabela A/B") | `validar_tabela(p[2], p[3], p[5])`<br>`p[0] = anotar_rotulo(p[5], "jogada", ...)` |
+| **14** | \<Jogada\> → **TRIANGULACAO** '{' \<SequenciaAcoes\> '}' | envolvidos = {autores} ∪ {receptores} dos passes.<br>Verifica: nº passes ≥ 3 e \|envolvidos\| = 3; senão **erro semântico**.<br>Jogada.lista = rotular(..., "Triangulação") | `validar_triangulacao(p[3])` |
+| **15** | \<Jogada\> → **CONTRA_ATAQUE** '{' \<SequenciaAcoes\> '}' | avanco = x_dest(último passe) − x_orig(primeiro passe).<br>Verifica: avanco ≥ 40 m e nº passes ≤ 6; senão **erro semântico**.<br>Jogada.lista = rotular(..., "Contra-ataque (+avanco m)") | `avanco = validar_contra_ataque(p[3])` |
+| **16** | \<AcaoAtomica\> → \<Passe\> ';' | AcaoAtomica.lista = Passe.lista | `p[0] = p[1]` |
+| **17** | \<AcaoAtomica\> → \<Finalizacao\> ';' | AcaoAtomica.lista = Finalizacao.lista | `p[0] = p[1]` |
+| **18** | \<AcaoAtomica\> → \<TrocaPosse\> ';' | AcaoAtomica.lista = [ TrocaPosse.info ] | `p[0] = [p[1]]` |
+| **19** | \<TrocaPosse\> → **TROCA_POSSE** **JOGADOR** | TrocaPosse.info = {tipo: TROCA_POSSE, nova_equipe: JOGADOR.lexval} *(muda o referencial das coordenadas seguintes)* | `p[0] = {"tipo_acao": "TROCA_POSSE", ...}` |
+| **20** | \<Passe\> → **PASSE** **JOGADOR** \<Coordenada\> \<CadeiaPasse\> | Passe.lista = CadeiaPasse.passes | `p[0] = p[4]["passes"]` |
+| **21** | \<CadeiaPasse\> → **SETA** **JOGADOR** \<Coordenada\> | **Atributos herdados:** CadeiaPasse.autor_h = JOGADOR(irmão em #20), CadeiaPasse.orig_h = Coordenada(irmã em #20).<br>P = montar_passe(autor_h, orig_h, JOGADOR.lexval, Coordenada.val)<br>CadeiaPasse.passes = [P]; .ultimo = JOGADOR.lexval; .ultima_coord = Coordenada.val | `autor, c_orig = p[-2], p[-1]` *(lidos na pilha, como `topo-2` no Bison)* |
+| **22** | \<CadeiaPasse\> → \<CadeiaPasse\>₁ **SETA** **JOGADOR** \<Coordenada\> | P = montar_passe(CadeiaPasse₁.ultimo, CadeiaPasse₁.ultima_coord, JOGADOR.lexval, Coordenada.val)<br>CadeiaPasse.passes = CadeiaPasse₁.passes + [P] | `p[0] = {"passes": p[1]["passes"] + [passe], ...}` |
+| — | *montar_passe(A, C₁, B, C₂)* | ΔX = C₂.x − C₁.x; ΔY = C₂.y − C₁.y; d = √(ΔX² + ΔY²)<br>z_o = zona(C₁); z_d = zona(C₂)<br>(tipo, dir) = classificar_passe(d, C₁, C₂, z_o, z_d) | `_montar_passe(...)` |
+| **23** | \<Finalizacao\> → **FINALIZACAO** **JOGADOR** \<Coordenada\> **RESULTADO** \<Desfecho\> | Finalizacao.lista = [ {autor, zona(Coordenada), Desfecho.val, tentativa = 1} ] | `p[0] = [_montar_chute(p[2], p[3], p[5])]` |
+| **24** | \<Finalizacao\> → **FINALIZACAO** **JOGADOR** \<Coordenada\> **RESULTADO** \<DesfechoParcial\> **REBOTE** \<Finalizacao\>₁ | Finalizacao.lista = [ chute(tentativa = 1) ] + [ c com tentativa + 1 para c ∈ Finalizacao₁.lista ] *(recursão à direita)* | `p[0] = [_montar_chute(...)] + seguintes` |
+| **25** | \<DesfechoParcial\> → **DEFESA** | DesfechoParcial.val = "DEFESA DO GOLEIRO!" | `p[0] = "DEFESA DO GOLEIRO!"` |
+| **26** | \<DesfechoParcial\> → **TRAVE** | DesfechoParcial.val = "NA TRAVE!" | `p[0] = "NA TRAVE!"` |
+| **27** | \<Coordenada\> → '(' **NUM₁** ',' **NUM₂** ')' | Verifica 0 ≤ NUM₁ ≤ 120 e 0 ≤ NUM₂ ≤ 80; senão **erro semântico**.<br>Coordenada.val = (NUM₁.lexval, NUM₂.lexval) | `p[0] = (p[2], p[4])` |
+| **28** | \<Desfecho\> → **GOL** | Desfecho.val = "GOL!" | `p[0] = "GOL!"` |
+| **29** | \<Desfecho\> → **DEFESA** | Desfecho.val = "DEFESA DO GOLEIRO!" | `p[0] = "DEFESA DO GOLEIRO!"` |
+| **30** | \<Desfecho\> → **FORA** | Desfecho.val = "PARA FORA!" | `p[0] = "PARA FORA!"` |
+| **31** | \<Desfecho\> → **TRAVE** | Desfecho.val = "NA TRAVE!" | `p[0] = "NA TRAVE!"` |
 
----
 
-## 3. Detalhamento das Funções Auxiliares das Regras Semânticas
-
-Detalhamento das funções invocadas nas **Produções #14** e **#15**:
-
-### 3.1. Função identificar_zona(x, y) — Mapeamento Cartesiano (11 Zonas)
-Converte qualquer par **(x, y)** do campo **120 x 80** (no referencial da equipe com a posse da bola) em uma das 11 zonas táticas:
-* **Grandes Áreas (Prioridade 1):**
-  * **102 ≤ x ≤ 120** e **18 ≤ y ≤ 62** → "Grande Área de Ataque"
-  * **0 ≤ x ≤ 18** e **18 ≤ y ≤ 62** → "Grande Área de Defesa"
-* **Divisão longitudinal (X) × Corredor transversal (Y):**
-  * **Setor:** Defesa (**x < 38**), Meio-Campo (**38 ≤ x < 80**), Ataque (**x ≥ 80**).
-  * **Corredor:** Esquerdo (**y < 25**), Central (**25 ≤ y ≤ 55**), Direito (**y > 55**).
-
-### 3.2. Função classificar_passe(d, ΔX, ΔY, z_orig, z_dest)
-* **Tipo do Passe:**
-  * Se **z_orig** pertence a um corredor lateral (**y < 25** ou **y > 55**) **e** **z_dest == "Grande Área de Ataque"** → **Cruzamento**;
-  * Senão, se **d ≤ 15m** → **Passe curto**;
-  * Senão, se **15m < d ≤ 30m** → **Passe médio**;
-  * Senão (**d > 30m**) → **Lançamento longo**.
-* **Direção Vetorial:**
-  * **ΔX ≥ 25** ou destino no setor de Ataque → "para o ataque";
-  * **ΔX > 2** → "para frente";
-  * **ΔX < -2** → "para trás (recuo)";
-  * **|ΔX| ≤ 2** e **|ΔY| ≥ 20** → "em inversão lateral".
+> Detalhes das funções `identificar_zona`, `classificar_passe` e da perspectiva por equipe (`espelhar`): ver `02_TABELA_SDT.md`.

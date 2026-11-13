@@ -11,6 +11,8 @@ Exemplos de uso:
   python main.py
   python main.py exemplos/lance_croacia.txt
   python main.py exemplos/lance_aninhado_fase.txt --tokens
+  python main.py exemplos/lance_recursivo.txt        (jogadas e ações recursivas)
+  python main.py exemplos/lance_troca_posse.txt      (perspectiva de campo por equipe)
   python main.py --match-id 3869253 --inicio 116:30 --fim 116:50 --mostrar-dsl
 """
 
@@ -22,7 +24,7 @@ from src.campo_statsbomb import extrair_lance_para_dsl
 
 EXEMPLO_MEMORIA = """LANCE [14:20 - 14:35] {
     PASSE "Luka Modrić" (25.4, 40.2) -> "Mateo Kovačić" (38.2, 42.1);
-    PASSE "Mateo Kovačić" (38.2, 42.1) -> "Ivan Perišić" (85.0, 18.5);
+    PASSE "Mateo Kovačić" (38.2, 42.1) -> "Andrej Kramarić" (85.0, 18.5);
     FINALIZACAO "Andrej Kramarić" (108.5, 39.8) RESULTADO GOL;
 }"""
 

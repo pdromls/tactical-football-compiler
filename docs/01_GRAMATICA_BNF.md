@@ -1,110 +1,176 @@
 # Especificação Formal da Gramática Livre de Contexto (BNF)
 
 **Disciplina:** Compiladores (2026_2)  
-**Projeto:** Tradutor Tático de Futebol Dirigido pela Sintaxe (StatsBomb 120x80)  
-**Gerador de Analisadores:** PLY (`ply.lex` e `ply.yacc` — LALR(1))
+**Projeto:** Tradutor Tático de Futebol Dirigido pela Sintaxe (StatsBomb 120 × 80)  
+**Gerador de Analisadores:** PLY (`ply.lex` e `ply.yacc` — LALR(1), **0 conflitos**)
 
 ---
 
-## 1. Definição Formal da Gramática $G$
+## 1. Definição Formal da Gramática G
 
-A linguagem formal de descrição de lances táticos é definida pela quádrupla $G = (V, \Sigma, P, S)$, onde:
+A linguagem de descrição de lances táticos é definida pela quádrupla `G = (V, Σ, P, S)`:
 
-* **Conjunto de Variáveis / Não-Terminais ($V$):**
-  $$V = \{ \langle\text{Lance}\rangle, \langle\text{IntervaloTempo}\rangle, \langle\text{Bloco}\rangle, \langle\text{SequenciaAcoes}\rangle, \langle\text{ElementoTatico}\rangle, \langle\text{AcaoAtomica}\rangle, \langle\text{Passe}\rangle, \langle\text{Finalizacao}\rangle, \langle\text{Coordenada}\rangle, \langle\text{Desfecho}\rangle \}$$
+* **Não-terminais (`V`), 15 símbolos:**
+  `V = { <Lance>, <Confronto>, <IntervaloTempo>, <Bloco>, <SequenciaAcoes>, <ElementoTatico>, <Jogada>, <AcaoAtomica>, <TrocaPosse>, <Passe>, <CadeiaPasse>, <Finalizacao>, <DesfechoParcial>, <Coordenada>, <Desfecho> }`
 
-* **Alfabeto de Símbolos Terminais / Tokens ($\Sigma$):**
-  $$\Sigma = \{ \textbf{LANCE}, \textbf{FASE}, \textbf{PASSE}, \textbf{FINALIZACAO}, \textbf{RESULTADO}, \textbf{GOL}, \textbf{DEFESA}, \textbf{FORA}, \textbf{TRAVE}, \textbf{TEMPO}, \textbf{JOGADOR}, \textbf{NUM}, \texttt{'['}, \texttt{']'}, \texttt{'-'}, \texttt{'\{'}, \texttt{'\}'}, \texttt{'('}, \texttt{')'}, \texttt{','}, \texttt{'->'}, \texttt{';'} \}$$
+* **Terminais / tokens (`Σ`):**
+  * Palavras reservadas: **LANCE, VS, FASE, POSSE, TROCA_POSSE, PASSE, FINALIZACAO, RESULTADO, REBOTE, GOL, DEFESA, FORA, TRAVE, TABELA, TRIANGULACAO, CONTRA_ATAQUE**
+  * Tokens com valor: **TEMPO, JOGADOR, NUM, SETA** (`->`)
+  * Literais: `[` `]` `-` `{` `}` `(` `)` `,` `;`
 
-* **Símbolo Inicial ($S$):**
-  $$S = \langle\text{Lance}\rangle$$
+* **Símbolo inicial:** `S = <Lance>`
 
 ---
 
-## 2. Regras de Produção ($P$) em Notação BNF Estrita
+## 2. Regras de Produção (P): 31 produções
+
+A numeração é a mesma da **Tabela SDT** (`02_TABELA_SDT.md`) e das árvores.
 
 ```bnf
-<Lance>          ::= LANCE <IntervaloTempo> <Bloco>
+ 1  <Lance>           ::= LANCE <IntervaloTempo> <Confronto> <Bloco>
+ 2  <Confronto>       ::= JOGADOR VS JOGADOR
+ 3                      | ε
+ 4  <IntervaloTempo>  ::= '[' TEMPO '-' TEMPO ']'
 
-<IntervaloTempo> ::= '[' TEMPO '-' TEMPO ']'
+ 5  <Bloco>           ::= '{' <SequenciaAcoes> '}'
+ 6                      | FASE JOGADOR '{' <SequenciaAcoes> '}'
+ 7                      | POSSE JOGADOR '{' <SequenciaAcoes> '}'
 
-<Bloco>          ::= '{' <SequenciaAcoes> '}'
-                   | FASE JOGADOR '{' <SequenciaAcoes> '}'
-                   | POSSE JOGADOR '{' <SequenciaAcoes> '}'
+ 8  <SequenciaAcoes>  ::= <SequenciaAcoes> <ElementoTatico>
+ 9                      | <ElementoTatico>
 
-<SequenciaAcoes> ::= <SequenciaAcoes> <ElementoTatico>
-                   | <ElementoTatico>
+10  <ElementoTatico>  ::= <AcaoAtomica>
+11                      | <Bloco>
+12                      | <Jogada>
 
-<ElementoTatico> ::= <AcaoAtomica>
-                   | <Bloco>
+13  <Jogada>          ::= TABELA JOGADOR JOGADOR '{' <SequenciaAcoes> '}'
+14                      | TRIANGULACAO '{' <SequenciaAcoes> '}'
+15                      | CONTRA_ATAQUE '{' <SequenciaAcoes> '}'
 
-<AcaoAtomica>    ::= <Passe> ';'
-                   | <Finalizacao> ';'
-                   | <TrocaPosse> ';'
+16  <AcaoAtomica>     ::= <Passe> ';'
+17                      | <Finalizacao> ';'
+18                      | <TrocaPosse> ';'
 
-<TrocaPosse>     ::= TROCA_POSSE JOGADOR
+19  <TrocaPosse>      ::= TROCA_POSSE JOGADOR
 
-<Passe>          ::= PASSE JOGADOR <Coordenada> '->' JOGADOR <Coordenada>
+20  <Passe>           ::= PASSE JOGADOR <Coordenada> <CadeiaPasse>
+21  <CadeiaPasse>     ::= SETA JOGADOR <Coordenada>
+22                      | <CadeiaPasse> SETA JOGADOR <Coordenada>
 
-<Finalizacao>    ::= FINALIZACAO JOGADOR <Coordenada> RESULTADO <Desfecho>
+23  <Finalizacao>     ::= FINALIZACAO JOGADOR <Coordenada> RESULTADO <Desfecho>
+24                      | FINALIZACAO JOGADOR <Coordenada> RESULTADO <DesfechoParcial> REBOTE <Finalizacao>
+25  <DesfechoParcial> ::= DEFESA
+26                      | TRAVE
 
-<Coordenada>     ::= '(' NUM ',' NUM ')'
+27  <Coordenada>      ::= '(' NUM ',' NUM ')'
 
-<Desfecho>       ::= GOL
-                   | DEFESA
-                   | FORA
-                   | TRAVE
+28  <Desfecho>        ::= GOL
+29                      | DEFESA
+30                      | FORA
+31                      | TRAVE
+```
+
+### 2.1 Exemplos de sentenças aceitas
+
+```text
+LANCE [14:20 - 14:35] {
+    PASSE "Luka Modrić" (25.4, 40.2) -> "Mateo Kovačić" (38.2, 42.1);
+    PASSE "Mateo Kovačić" (38.2, 42.1) -> "Andrej Kramarić" (85.0, 18.5);
+    FINALIZACAO "Andrej Kramarić" (108.5, 39.8) RESULTADO GOL;
+}
+```
+
+```text
+LANCE [62:10 - 62:40] {
+  CONTRA_ATAQUE {
+    PASSE "Gvardiol" (15.0, 35.0) -> "Brozovic" (32.0, 40.0) -> "Modric" (45.0, 44.0);
+    TABELA "Modric" "Kovacic" {
+      PASSE "Modric" (45.0, 44.0) -> "Kovacic" (52.0, 50.0) -> "Modric" (60.0, 42.0);
+    }
+    PASSE "Modric" (60.0, 42.0) -> "Perisic" (92.0, 12.0);
+  }
+  FINALIZACAO "Perisic" (105.0, 30.0) RESULTADO DEFESA REBOTE
+    FINALIZACAO "Kramaric" (110.0, 40.0) RESULTADO TRAVE REBOTE
+      FINALIZACAO "Petkovic" (112.0, 38.0) RESULTADO GOL;
+}
 ```
 
 ---
 
 ## 3. Especificação Léxica dos Terminais (`ply.lex`)
 
-| Token Terminal | Expressão Regular (Regex) | Exemplo de Lexema | Valor Atribuído (`t.value`) |
+| Token | Expressão regular | Exemplo de lexema | Valor (`t.value`) |
 | :--- | :--- | :--- | :--- |
-| `TEMPO` | `\d{1,3}:\d{2}` | `14:20`, `90:05` | String `"14:20"` |
-| `NUM` | `\d+(\.\d+)?` | `25.4`, `108.5`, `40` | `float(t.value)` |
-| `JOGADOR` | `"[^"\n]+"` | `"Luka Modrić"` | String UTF-8 sem aspas |
-| `SETA` (`'->'`) | `->` | `->` | String `"->"` |
-| Palavras Reservadas | `[a-zA-Z_][a-zA-Z_0-9]*` | `LANCE`, `PASSE`, `FINALIZACAO`, `RESULTADO`, `GOL`, `DEFESA`, `FORA`, `TRAVE`, `FASE` | Nome do token reservado |
-| Literais | `[\[\]\-\{\}\(\),;]` | `[`, `]`, `-`, `{`, `}`, `(`, `)`, `,`, `;` | Próprio caractere ASCII |
+| `TEMPO` | `\d{1,3}:\d{2}` | `14:20`, `116:30` | string `"14:20"` |
+| `NUM` | `\d+(\.\d+)?` | `25.4`, `40` | `float` |
+| `JOGADOR` | `"[^"\n]+"` | `"Luka Modrić"` | string UTF-8 sem aspas |
+| `SETA` | `->` | `->` | `"->"` |
+| Reservadas | `[a-zA-Z_][a-zA-Z_0-9]*` + tabela `reserved` | `LANCE`, `VS`, `FASE`, `POSSE`, `TROCA_POSSE`, `PASSE`, `FINALIZACAO`, `RESULTADO`, `REBOTE`, `GOL`, `DEFESA`, `FORA`, `TRAVE`, `TABELA`, `TRIANGULACAO`, `CONTRA_ATAQUE` | nome da palavra |
+| Literais | `[ ] - { } ( ) , ;` | `{` | o próprio caractere |
+| (ignorados) | `[ \t\r]`, `\n+`, `\#.*` | espaços, quebras, comentários | — |
+
+**Decisões léxicas:**
+* `t_TEMPO` é definido **antes** de `t_NUM`. Assim, `14:20` vira um único token, e não `NUM ':' NUM`.
+* O PLY ordena as regras definidas por string pelo tamanho da regex. Por isso `->` (SETA) é testado antes do literal `-`.
+* Um identificador que não está na tabela `reserved` gera **erro léxico** com linha e coluna.
+* **Sobre o nome `JOGADOR`:** o token representa *qualquer nome entre aspas*. Lexicamente, um jogador (`"Modrić"`), uma equipe (`POSSE "Croatia"`) e uma fase (`FASE "Saída de Bola"`) são indistinguíveis. **Quem dá o papel é a produção sintática** em que o token aparece.
 
 ---
 
-## 4. Justificativas Teóricas Formais
+## 4. Justificativas Teóricas
 
-### 4.1 Recursão à Esquerda em Analisadores Ascendentes LALR(1)
-
-Na regra de produção que define a lista de ações do lance:
+### 4.1 Recursão à esquerda em analisadores LALR(1)
 
 ```bnf
-<SequenciaAcoes> ::= <SequenciaAcoes> <ElementoTatico>
-                   | <ElementoTatico>
+ 8  <SequenciaAcoes> ::= <SequenciaAcoes> <ElementoTatico>
+22  <CadeiaPasse>    ::= <CadeiaPasse> SETA JOGADOR <Coordenada>
 ```
 
-Optou-se deliberadamente pela **recursão direta à esquerda** em vez da recursão à direita.
-* **Justificativa para o `ply.yacc`:** O gerador `ply.yacc` constrói um analisador sintático ascendente (*bottom-up*) do tipo **LALR(1)** (*Lookahead LR*). Em um parser *shift-reduce*, a recursão à esquerda permite que cada $\langle\text{ElementoTatico}\rangle$ lido seja reduzido imediatamente (`reduce`) ao topo da pilha, mantendo a profundidade da pilha de estados constante em $O(1)$, independentemente do número $N$ de passes da partida.
-* Caso fosse empregada recursão à direita ($\langle\text{SequenciaAcoes}\rangle ::= \langle\text{ElementoTatico}\rangle \ \langle\text{SequenciaAcoes}\rangle$), o autômato precisaria empilhar (`shift`) todos os $N$ eventos na pilha antes de realizar a primeira redução no final do bloco, exigindo espaço $O(N)$ na pilha de análise e podendo causar estouro de pilha (*Stack Overflow*) em sequências longas.
+Num parser *shift-reduce* (o `ply.yacc` gera LALR(1)), a recursão à esquerda permite reduzir cada elemento assim que ele termina. Para uma sequência **no mesmo nível**, a pilha fica com tamanho constante, independentemente do número `N` de ações. Com recursão à direita, os `N` elementos seriam empilhados antes da primeira redução (pilha `O(N)`).
 
-### 4.2 Propriedade de Auto-Incorporação (*Self-Embedding*) e Classificação de Chomsky (Tipo 2)
+> A pilha total é `O(d)`, onde `d` é a **profundidade de aninhamento** de blocos e jogadas. O aninhamento é justamente o que exige pilha (Seção 4.3).
 
-Para provar matematicamente que a linguagem gerada por $G$ é **estritamente Livre de Contexto (Tipo 2 na Hierarquia de Chomsky)** e **não é uma Linguagem Regular (Tipo 3)**, demonstramos que $G$ possui a propriedade de **Auto-Incorporação (*Self-Embedding*)** não-degenerada.
+### 4.2 Recursão à direita intencional: o rebote
 
-> **Definição Formal:** Uma Gramática Livre de Contexto $G = (V, \Sigma, P, S)$ apresenta auto-incorporação se e somente se existe uma variável $A \in V$ tal que:
-> $$A \Rightarrow^+ \alpha A \beta$$
-> onde $\alpha, \beta \in (V \cup \Sigma)^+$ (isto é, $\alpha \neq \varepsilon$ e $\beta \neq \varepsilon$).
+```bnf
+24  <Finalizacao> ::= FINALIZACAO JOGADOR <Coordenada> RESULTADO <DesfechoParcial> REBOTE <Finalizacao>
+```
 
-**Demonstração em nossa gramática:**
-Tomando o não-terminal $A = \langle\text{Bloco}\rangle$, temos a seguinte sequência de derivações em três passos:
+Aqui a recursão à direita é escolhida pelo **significado**: o segundo chute só existe por causa do primeiro (a bola voltou da defesa do goleiro ou da trave). A sequência de rebotes é curta na prática, então o custo de pilha `O(k)` é irrelevante. Em troca, a árvore representa a relação causal "chute → rebote → chute".
 
-1. $\langle\text{Bloco}\rangle \Rightarrow \texttt{'\{'} \ \langle\text{SequenciaAcoes}\rangle \ \texttt{'\}'}$ *(pela Produção 3)*
-2. $\texttt{'\{'} \ \langle\text{SequenciaAcoes}\rangle \ \texttt{'\}'} \Rightarrow \texttt{'\{'} \ \langle\text{ElementoTatico}\rangle \ \texttt{'\}'}$ *(pela Produção 5)*
-3. $\texttt{'\{'} \ \langle\text{ElementoTatico}\rangle \ \texttt{'\}'} \Rightarrow \texttt{'\{'} \ \langle\text{Bloco}\rangle \ \texttt{'\}'}$ *(pela Produção 7)*
+**Ausência de conflito:** depois de `DEFESA`, o parser decide pelo *lookahead*. Se o próximo token é `;`, reduz para `<Desfecho>` (#29). Se é `REBOTE`, reduz para `<DesfechoParcial>` (#25). Um token de lookahead basta, por isso é LALR(1).
 
-Portanto:
-$$\langle\text{Bloco}\rangle \Rightarrow^+ \texttt{'\{'} \ \langle\text{Bloco}\rangle \ \texttt{'\}'}$$
+### 4.3 A linguagem é livre de contexto e não é regular (Chomsky Tipo 2)
 
-onde $\alpha = \texttt{'\{'} \in \Sigma^+$ e $\beta = \texttt{'\}'} \in \Sigma^+$, ambos não-vazios.
+**(a) Auto-incorporação na gramática.** A variável `<Bloco>` satisfaz `A ⇒⁺ α A β` com `α, β ≠ ε`:
 
-**Significado Semântico e Conclusão:**
-No domínio tático do futebol, essa estrutura permite agrupar **subfases táticas hierárquicas** arbitrariamente aninhadas dentro de um lance (por exemplo, um bloco de `"Saída de Bola"` que contém um sub-bloco de `"Triangulação sob Pressão"` `{ ... { ... } ... }`). Como o reconhecimento do balanceamento exato de delimitadores aninhados $\{^n \ \dots \ \}^n$ para $n \ge 1$ arbitrário viola o Lema do Bombeamento para Linguagens Regulares, conclui-se que a linguagem exige um **Autômato com Pilha (PDA)** e pertence estritamente à classe das **Linguagens Livres de Contexto (Chomsky Tipo 2)**.
+`<Bloco> ⇒(#5) { <SequenciaAcoes> } ⇒(#9) { <ElementoTatico> } ⇒(#11) { <Bloco> }`
+
+O mesmo vale para `<Jogada>`: `<Jogada> ⇒ TABELA J J { <SequenciaAcoes> } ⇒⁺ TABELA J J { <Jogada> }`.
+
+> **Atenção:** auto-incorporação **sozinha não prova** que a linguagem não é regular. O teorema de Chomsky diz o contrário: *se uma GLC não tem auto-incorporação, a linguagem é regular*. A recíproca é falsa. Por exemplo, `S → aSa | a` tem auto-incorporação e gera `a(aa)*`, que é regular. A auto-incorporação mostra que **esta gramática** precisa de pilha. Para afirmar algo sobre **a linguagem**, usamos o argumento (b).
+
+**(b) Prova de que `L(G)` não é regular.** Considere a linguagem regular:
+
+`R = LANCE [T - T] {*} PASSE J (N,N) -> J (N,N) ; }*`
+
+1. As linguagens regulares são fechadas sob interseção. Logo, se `L(G)` fosse regular, `L(G) ∩ R` também seria.
+2. Pela gramática, as chaves precisam estar balanceadas, então `L(G) ∩ R = { LANCE [T-T] {^n PASSE...; }^n | n >= 1 }`.
+3. Aplicando o homomorfismo que apaga todos os símbolos exceto `{` e `}`, obtemos `{ {^n }^n | n >= 1 }`. As linguagens regulares são fechadas sob homomorfismo.
+4. `{ {^n }^n }` **não é regular pelo Lema do Bombeamento**. Tome `w = {^p }^p`. Qualquer divisão `w = xyz` com `|xy| <= p`, `|y| >= 1` tem `y` formado só por `{`. Então `xy²z` fica com mais `{` do que `}`, e não pertence à linguagem.
+5. Contradição. Portanto `L(G)` **não é regular**. Como `G` é livre de contexto, `L(G)` é **estritamente Tipo 2**: precisa de um **autômato com pilha**.
+
+**Significado no domínio:** a pilha guarda o contexto tático em aberto. Por exemplo, um `CONTRA_ATAQUE` que contém uma `TABELA` que contém um sub-bloco. Ao fechar cada `}`, o parser sabe exatamente qual jogada está sendo concluída e aplica a regra semântica dela.
+
+---
+
+## 5. Convenção de coordenadas por equipe (importante para a semântica)
+
+Toda coordenada da DSL está no **referencial do time que executa a ação**, o mesmo padrão da StatsBomb. `X = 0` é a linha de fundo da própria defesa e `X = 120` é o gol adversário. Consequências:
+
+* O **campo de ataque do Brasil é o campo de defesa da Croácia**, e vice-versa.
+* O mesmo ponto físico visto pelo adversário é obtido por uma **rotação de 180°**:
+  `espelhar(x, y) = (120 − x, 80 − y)`
+  Exemplo: `Ataque Esquerdo` da Croácia em `(85, 18.5)` = `Defesa Direita` do Brasil em `(35, 61.5)`.
+* **Verificado nos dados reais** (Croácia x Brasil, Copa 2022, `match_id` 3869420): todos os chutes dos dois times têm `X >= 89`, e nas trocas de posse o primeiro evento do time que recupera fica em `≈ (120 − x, 80 − y)` do último passe do time que perdeu. Exemplo: Croácia perde em `(80.0, 26.5)` e o Brasil começa em `(40.1, 53.6)`.
+* O cabeçalho opcional `"Croatia" VS "Brazil"` (produção #2) diz ao compilador quem é o adversário de cada time. Assim, o relatório mostra cada zona **nas duas perspectivas** e valida que `POSSE`/`TROCA_POSSE` só citam equipes do confronto.

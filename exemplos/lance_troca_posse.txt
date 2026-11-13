@@ -1,0 +1,16 @@
+# Troca de posse com perspectiva por equipe: as coordenadas de cada bloco POSSE
+# estão no referencial do time que executa a ação (padrão StatsBomb, X=120 = gol adversário).
+# O campo de ataque da Croácia é o campo de defesa do Brasil:
+#   ponto (x, y) para a Croácia  ==  ponto (120 - x, 80 - y) para o Brasil.
+# Perišić perde a bola em (95, 60) no ataque da Croácia; o Brasil recupera em
+# (25, 20) = (120 - 95, 80 - 60), ou seja, na própria defesa.
+LANCE [02:40 - 02:55] "Croatia" VS "Brazil" {
+    POSSE "Croatia" {
+        PASSE "Luka Modrić" (60.0, 40.0) -> "Ivan Perišić" (95.0, 60.0);
+    }
+    TROCA_POSSE "Brazil";
+    POSSE "Brazil" {
+        PASSE "Marquinhos" (25.0, 20.0) -> "Casemiro" (50.0, 35.0) -> "Vinícius Júnior" (88.0, 12.0);
+        FINALIZACAO "Vinícius Júnior" (106.0, 30.0) RESULTADO DEFESA;
+    }
+}

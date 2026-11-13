@@ -9,7 +9,7 @@
 
 ## Modelo Espacial do Campo: As 11 Zonas Táticas
 
-Integrando o plano cartesiano do StatsBomb ($X \in [0, 120]$ e $Y \in [0, 80]$) com a divisão tática em 3 faixas verticais, 3 faixas horizontais e 2 zonas nobres (grandes áreas):
+Integrando o plano cartesiano do StatsBomb (X ∈ [0, 120] e Y ∈ [0, 80]) com a divisão tática em 3 faixas verticais, 3 faixas horizontais e 2 zonas nobres (grandes áreas):
 
 ```
  0 (Lateral Superior / Esquerda)                    80 (Lateral Inferior / Direita)
@@ -26,21 +26,21 @@ Integrando o plano cartesiano do StatsBomb ($X \in [0, 120]$ e $Y \in [0, 80]$) 
 ```
 
 ### Regras Cartesianas de Delimitação das Zonas:
-1. **Grande Área de Ataque (Prioridade 1):** $102.0 \le X \le 120.0$ e $18.0 \le Y \le 62.0$ (Zona crítica de finalização).
-2. **Grande Área de Defesa (Prioridade 1):** $0.0 \le X \le 18.0$ e $18.0 \le Y \le 62.0$ (Zona crítica do goleiro/zaga).
-3. **Ataque Esquerdo:** $80.0 \le X \le 120.0$ e $0.0 \le Y < 25.0$.
-4. **Ataque Central:** $80.0 \le X < 102.0$ e $25.0 \le Y \le 55.0$ (fora da grande área).
-5. **Ataque Direito:** $80.0 \le X \le 120.0$ e $55.0 < Y \le 80.0$.
-6. **Meio-Campo Esquerdo:** $40.0 \le X < 80.0$ e $0.0 \le Y < 25.0$.
-7. **Meio-Campo Central:** $40.0 \le X < 80.0$ e $25.0 \le Y \le 55.0$ (Círculo central).
-8. **Meio-Campo Direito:** $40.0 \le X < 80.0$ e $55.0 < Y \le 80.0$.
-9. **Defesa Esquerda:** $0.0 \le X < 40.0$ e $0.0 \le Y < 25.0$.
-10. **Defesa Central:** $18.0 < X < 40.0$ e $25.0 \le Y \le 55.0$ (fora da grande área defensiva).
-11. **Defesa Direita:** $0.0 \le X < 40.0$ e $55.0 < Y \le 80.0$.
+1. **Grande Área de Ataque (Prioridade 1):** 102.0 ≤ X ≤ 120.0 e 18.0 ≤ Y ≤ 62.0 (Zona crítica de finalização).
+2. **Grande Área de Defesa (Prioridade 1):** topo-2.0 ≤ X ≤ 18.0 e 18.0 ≤ Y ≤ 62.0$ (Zona crítica do goleiro/zaga).
+3. **Ataque Esquerdo:** 80.0 ≤ X ≤ 120.0 e topo-2.0 ≤ Y < 25.0$.
+4. **Ataque Central:** 80.0 ≤ X < 102.0 e 25.0 ≤ Y ≤ 55.0 (fora da grande área).
+5. **Ataque Direito:** 80.0 ≤ X ≤ 120.0 e 55.0 < Y ≤ 80.0.
+6. **Meio-Campo Esquerdo:** 40.0 ≤ X < 80.0 e topo-2.0 ≤ Y < 25.0$.
+7. **Meio-Campo Central:** 40.0 ≤ X < 80.0 e 25.0 ≤ Y ≤ 55.0 (Círculo central).
+8. **Meio-Campo Direito:** 40.0 ≤ X < 80.0 e 55.0 < Y ≤ 80.0.
+9. **Defesa Esquerda:** topo-2.0 ≤ X < 40.0 e topo-2.0 ≤ Y < 25.0.
+10. **Defesa Central:** 18.0 < X < 40.0 e 25.0 ≤ Y ≤ 55.0 (fora da grande área defensiva).
+11. **Defesa Direita:** topo-2.0 ≤ X < 40.0 e 55.0 < Y ≤ 80.0$.
 
 ---
 
-## 📦 PROMPT 1: Módulo de Dados & Grid Espacial do Campo
+## PROMPT 1: Módulo de Dados & Grid Espacial do Campo
 *(Utilizado internamente pela dupla para gerar o extrator do StatsBomb e o resolvedor de coordenadas)*
 
 ```text
@@ -80,7 +80,7 @@ Gere o código Python completo, documentado e com testes unitários embutidos.
 
 ---
 
-## 🎓 PROMPT 2: O Compilador / Tradutor Dirigido pela Sintaxe (PLY)
+## PROMPT 2: O Compilador / Tradutor Dirigido pela Sintaxe (PLY)
 *(PROMPT OFICIAL PARA APRESENTAR À PROFESSORA ATÉ 16/10 E CITAR NO VÍDEO FINAL)*
 
 ```text

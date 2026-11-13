@@ -6,12 +6,15 @@ Valida:
   2. Classificação de Passes (Curto, Médio, Lançamento, Cruzamento);
   3. Análise Léxica e Sintática com PLY;
   4. Auto-Incorporação (Blocos aninhados recursivamente - Chomsky Tipo 2);
-  5. Detecção de Erros Léxicos, Sintáticos e Semânticos.
+  5. Detecção de Erros Léxicos, Sintáticos e Semânticos;
+  6. [NOVO] Elementos táticos recursivos (TABELA, TRIANGULACAO, CONTRA_ATAQUE);
+  7. [NOVO] Ações atômicas recursivas (passe encadeado e finalização com rebote);
+  8. [NOVO] Perspectiva de campo por equipe (ataque de um = defesa do outro).
 """
 
 import unittest
 from src.compilador import CompiladorTatico
-from src.semantico import identificar_zona, calcular_distancia
+from src.semantico import identificar_zona, espelhar, zona_para_adversario, classificar_passe, calcular_distancia
 
 
 class TestCompiladorTatico(unittest.TestCase):
@@ -44,7 +47,7 @@ class TestCompiladorTatico(unittest.TestCase):
         entrada = """
         LANCE [14:20 - 14:35] {
             PASSE "Luka Modrić" (25.4, 40.2) -> "Mateo Kovačić" (38.2, 42.1);
-            PASSE "Mateo Kovačić" (38.2, 42.1) -> "Ivan Perišić" (85.0, 18.5);
+            PASSE "Mateo Kovačić" (38.2, 42.1) -> "Andrej Kramarić" (85.0, 18.5);
             FINALIZACAO "Andrej Kramarić" (108.5, 39.8) RESULTADO GOL;
         }
         """
@@ -57,7 +60,7 @@ class TestCompiladorTatico(unittest.TestCase):
         self.assertEqual(a1["autor"], "Luka Modrić")
         self.assertEqual(a1["classificacao"], "Passe curto")
         self.assertEqual(a1["zona_orig"], "Defesa Central")
-        self.assertEqual(a1["zona_dest"], "Meio-Campo Central")
+        self.assertEqual(a1["zona_dest"], "Defesa Central")  # limiar unificado: X < 40 é Defesa
 
         # Ação 2: Lançamento longo para o ataque
         a2 = res["acoes"][1]
@@ -109,6 +112,82 @@ class TestCompiladorTatico(unittest.TestCase):
         """
         with self.assertRaises(ValueError):
             self.compilador.compilar_texto(entrada_invalida)
+
+    # ------------------------------------------------------------------
+    # [NOVO] Testes da correção: recursividade e perspectiva por equipe
+    # ------------------------------------------------------------------
+
+    def test_passe_encadeado_recursivo(self):
+        """PASSE A -> B -> C gera 2 passes; o 2º sai de B (atributo herdado/sintetizado)."""
+        res = self.compilador.compilar_texto(
+            'LANCE [1:00 - 1:10] { PASSE "A" (30, 40) -> "B" (45, 40) -> "C" (70, 30); }'
+        )
+        a1, a2 = res["acoes"]
+        self.assertEqual((a1["autor"], a1["receptor"]), ("A", "B"))
+        self.assertEqual((a2["autor"], a2["receptor"]), ("B", "C"))
+        self.assertEqual(a2["coord_orig"], (45.0, 40.0))
+
+    def test_finalizacao_com_rebote_recursivo(self):
+        """Finalização com rebote (recursão à direita) numera as tentativas."""
+        res = self.compilador.compilar_texto(
+            'LANCE [1:00 - 1:10] { FINALIZACAO "A" (105, 40) RESULTADO DEFESA REBOTE '
+            'FINALIZACAO "B" (110, 38) RESULTADO TRAVE REBOTE '
+            'FINALIZACAO "C" (112, 40) RESULTADO GOL; }'
+        )
+        self.assertEqual([a["tentativa"] for a in res["acoes"]], [1, 2, 3])
+        self.assertEqual(res["acoes"][-1]["desfecho"], "GOL!")
+
+    def test_jogadas_recursivas_aninhadas(self):
+        """TABELA dentro de CONTRA_ATAQUE: rótulo hierárquico e validação em cada nível."""
+        res = self.compilador.compilar_arquivo("exemplos/lance_recursivo.txt")
+        self.assertIn("Tabela", res["acoes"][2]["jogada"])
+        self.assertTrue(res["acoes"][2]["jogada"].startswith("Contra-ataque"))
+
+    def test_erros_semanticos_das_jogadas(self):
+        casos = [
+            'TABELA "A" "B" { PASSE "A" (50, 40) -> "C" (60, 40); }',
+            'TRIANGULACAO { PASSE "A" (50, 40) -> "B" (60, 40) -> "C" (70, 40) -> "D" (75, 40); }',
+            'CONTRA_ATAQUE { PASSE "A" (50, 40) -> "B" (60, 40); }',
+        ]
+        for corpo in casos:
+            with self.assertRaises(ValueError):
+                self.compilador.compilar_texto(f"LANCE [1:00 - 1:10] {{ {corpo} }}")
+
+    def test_perspectiva_por_equipe(self):
+        """O mesmo ponto físico é Ataque para um time e Defesa para o outro."""
+        self.assertEqual(espelhar((85.0, 18.5)), (35.0, 61.5))
+        self.assertEqual(identificar_zona(85.0, 18.5), "Ataque Esquerdo")
+        self.assertEqual(zona_para_adversario((85.0, 18.5)), "Defesa Direita")
+        self.assertEqual(zona_para_adversario((110.0, 40.0)), "Grande Área de Defesa")
+
+    def test_confronto_e_troca_de_posse(self):
+        res = self.compilador.compilar_arquivo("exemplos/lance_troca_posse.txt")
+        self.assertEqual(res["confronto"], ["Croatia", "Brazil"])
+        self.assertEqual(res["trocas_de_posse"], 1)
+        brasil = [a for a in res["acoes"] if a["equipe"] == "Brazil"][0]
+        self.assertEqual(brasil["adversario"], "Croatia")
+        self.assertIn("Defesa Esquerda (Brazil) = Ataque Direito (Croatia)", res["texto"])
+
+    def test_equipe_fora_do_confronto(self):
+        with self.assertRaises(ValueError):
+            self.compilador.compilar_texto(
+                'LANCE [1:00 - 1:10] "Croatia" VS "Brazil" { POSSE "Argentina" { '
+                'PASSE "A" (50, 40) -> "B" (60, 40); } }'
+            )
+
+    def test_cruzamento_exige_origem_no_ataque(self):
+        """Correção do bug: passe longo da Defesa Esquerda não é cruzamento."""
+        c1, c2 = (10.0, 5.0), (105.0, 40.0)
+        tipo, _ = classificar_passe(calcular_distancia(c1, c2), c1, c2,
+                                    identificar_zona(*c1), identificar_zona(*c2))
+        self.assertEqual(tipo, "Lançamento longo")
+
+    def test_aviso_de_continuidade(self):
+        res = self.compilador.compilar_texto(
+            'LANCE [1:00 - 1:10] { PASSE "A" (30, 40) -> "B" (45, 40); '
+            'FINALIZACAO "C" (108, 40) RESULTADO FORA; }'
+        )
+        self.assertEqual(len(res["avisos"]), 1)
 
 
 if __name__ == "__main__":

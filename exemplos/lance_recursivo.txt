@@ -1,0 +1,13 @@
+# Exemplo da proposta de correção: elementos táticos recursivos + ações atômicas recursivas
+LANCE [62:10 - 62:40] {
+  CONTRA_ATAQUE {
+    PASSE "Gvardiol" (15.0, 35.0) -> "Brozovic" (32.0, 40.0) -> "Modric" (45.0, 44.0);
+    TABELA "Modric" "Kovacic" {
+      PASSE "Modric" (45.0, 44.0) -> "Kovacic" (52.0, 50.0) -> "Modric" (60.0, 42.0);
+    }
+    PASSE "Modric" (60.0, 42.0) -> "Perisic" (92.0, 12.0);
+  }
+  FINALIZACAO "Perisic" (105.0, 30.0) RESULTADO DEFESA REBOTE
+    FINALIZACAO "Kramaric" (110.0, 40.0) RESULTADO TRAVE REBOTE
+      FINALIZACAO "Petkovic" (112.0, 38.0) RESULTADO GOL;
+}

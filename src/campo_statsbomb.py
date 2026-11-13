@@ -20,6 +20,11 @@ import urllib.request
 import warnings
 from typing import Any
 
+try:  # funciona como pacote (src.campo_statsbomb) e como script
+    from .semantico import identificar_zona as _identificar_zona_semantica
+except ImportError:  # pragma: no cover
+    from semantico import identificar_zona as _identificar_zona_semantica
+
 
 # Diretório de cache local para que partidas já baixadas rodem instantaneamente e offline
 CACHE_DIR = Path(__file__).resolve().parent.parent / "data_cache"
@@ -31,64 +36,20 @@ CACHE_DIR = Path(__file__).resolve().parent.parent / "data_cache"
 
 def identificar_zona(x: float, y: float) -> str:
     """
-    Classifica qualquer coordenada cartesiana (X, Y) do campo StatsBomb
-    (X de 0.0 a 120.0, Y de 0.0 a 80.0) em uma das 11 zonas táticas.
+    [MODIFICADO] Antes este módulo tinha uma cópia própria da função com limiar
+    X >= 40 para o meio-campo, enquanto o compilador usava X >= 38 (644 pontos do
+    campo caíam em zonas diferentes). Agora existe UMA única definição, em
+    `semantico.py`; aqui apenas validamos os limites do campo e delegamos.
 
-    Ordem de avaliação (Alta Prioridade para as Grandes Áreas):
-      1. "Grande Área de Ataque": X em [102, 120] e Y em [18, 62]
-      2. "Grande Área de Defesa": X em [0, 18] e Y em [18, 62]
-      3. Setor de Ataque (X >= 80):
-         - "Ataque Esquerdo": Y < 25
-         - "Ataque Central":  25 <= Y <= 55 (e X < 102)
-         - "Ataque Direito":  Y > 55
-      4. Setor de Meio-Campo (40 <= X < 80):
-         - "Meio-Campo Esquerdo": Y < 25
-         - "Meio-Campo Central":  25 <= Y <= 55
-         - "Meio-Campo Direito":  Y > 55
-      5. Setor de Defesa (X < 40):
-         - "Defesa Esquerda": Y < 25
-         - "Defesa Central":  25 <= Y <= 55 (e X > 18)
-         - "Defesa Direita":  Y > 55
+    As coordenadas da StatsBomb já vêm no referencial do time que executa o
+    evento (X = 120 é sempre o gol adversário de quem age).
     """
-    x_val = float(x)
-    y_val = float(y)
-
+    x_val, y_val = float(x), float(y)
     if not (0.0 <= x_val <= 120.0 and 0.0 <= y_val <= 80.0):
         raise ValueError(
             f"Coordenada ({x_val}, {y_val}) fora dos limites do campo StatsBomb (120x80)."
         )
-
-    # Prioridade 1: Grandes Áreas
-    if 102.0 <= x_val <= 120.0 and 18.0 <= y_val <= 62.0:
-        return "Grande Área de Ataque"
-    if 0.0 <= x_val <= 18.0 and 18.0 <= y_val <= 62.0:
-        return "Grande Área de Defesa"
-
-    # Prioridade 2: Setor de Ataque (X >= 80)
-    if x_val >= 80.0:
-        if y_val < 25.0:
-            return "Ataque Esquerdo"
-        elif y_val <= 55.0:
-            return "Ataque Central"
-        else:
-            return "Ataque Direito"
-
-    # Prioridade 3: Setor de Meio-Campo (40 <= X < 80)
-    if x_val >= 40.0:
-        if y_val < 25.0:
-            return "Meio-Campo Esquerdo"
-        elif y_val <= 55.0:
-            return "Meio-Campo Central"
-        else:
-            return "Meio-Campo Direito"
-
-    # Prioridade 4: Setor de Defesa (X < 40)
-    if y_val < 25.0:
-        return "Defesa Esquerda"
-    elif y_val <= 55.0:
-        return "Defesa Central"
-    else:
-        return "Defesa Direita"
+    return _identificar_zona_semantica(x_val, y_val)
 
 
 # ==============================================================================
@@ -241,6 +202,16 @@ def extrair_lance_para_dsl(
 
     registros = _obter_eventos_statsbomb(match_id)
 
+    # [NOVO] Os dois times da partida (para o cabeçalho "A" VS "B"): o campo de
+    # ataque de um é o campo de defesa do outro, e o compilador precisa saber disso.
+    equipes_partida: list[str] = []
+    for reg in registros:
+        eq = reg.get("team")
+        if _eh_valor_valido(eq) and str(eq).strip():
+            eq = str(eq).strip().replace('"', "'")
+            if eq not in equipes_partida:
+                equipes_partida.append(eq)
+
     # Filtra apenas eventos 'Pass' e 'Shot' dentro do intervalo [tempo_ini_seg, tempo_fim_seg]
     eventos_filtrados = []
     for idx_padrao, reg in enumerate(registros):
@@ -337,7 +308,11 @@ def extrair_lance_para_dsl(
     ts_fim = f"{int(minuto_fim):02d}:{int(segundo_fim):02d}"
     corpo_dsl = "\n".join(linhas_codigo_dsl)
 
-    return f"LANCE [{ts_inicio} - {ts_fim}] {{\n{corpo_dsl}\n}}"
+    confronto = (
+        f' "{equipes_partida[0]}" VS "{equipes_partida[1]}"'
+        if len(equipes_partida) == 2 else ""
+    )
+    return f"LANCE [{ts_inicio} - {ts_fim}]{confronto} {{\n{corpo_dsl}\n}}"
 
 
 # ==============================================================================
@@ -447,6 +422,7 @@ class TestCampoStatsBomb(unittest.TestCase):
         with patch(__name__ + "._obter_eventos_statsbomb", return_value=eventos_mock):
             codigo_dsl = extrair_lance_para_dsl(3869420, 10, 0, 10, 15)
 
+        self.assertIn('LANCE [10:00 - 10:15] "Croatia" VS "Brazil" {', codigo_dsl)
         self.assertIn('POSSE "Croatia"', codigo_dsl)
         self.assertIn('TROCA_POSSE "Brazil";', codigo_dsl)
         self.assertIn('POSSE "Brazil"', codigo_dsl)

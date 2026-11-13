@@ -65,21 +65,21 @@ O projeto atende com precisão a todos os critérios e entregáveis exigidos no 
 ### 2.2 Análise Sintática (`ply.yacc`)
 * **Gramática Livre de Contexto (BNF):**
   * Modela a estrutura estrita de um lance válido:
-    $$\text{Lance} \rightarrow \text{CabecalhoTempo} \;\; \text{SequenciaPasses} \;\; \text{Fim}$$
-    $$\text{SequenciaPasses} \rightarrow \text{SequenciaPasses} \;\; \text{Passo} \;\mid\; \text{Passo}$$
-    $$\text{Passo} \rightarrow \text{PASSE} \;\; \text{JOGADOR} \;\; \text{COORD} \;\; \text{"->"} \;\; \text{JOGADOR} \;\; \text{COORD}$$
+    Lance → CabecalhoTempo \;\; SequenciaPasses \;\; Fim
+    SequenciaPasses → SequenciaPasses \;\; Passo \;|\; Passo
+    Passo → PASSE \;\; JOGADOR \;\; COORD \;\; "->" \;\; JOGADOR \;\; COORD
 * **Árvore de Derivação (Parse Tree):** Atende diretamente ao item **4.d** do regulamento, evidenciando como a sentença de entrada se deriva a partir do símbolo inicial da gramática.
 
 ### 2.3 Análise Semântica & Tradução Dirigida pela Sintaxe (SDT)
 Nas funções do `ply.yacc`, cada redução gramatical executa a ação semântica correspondente:
-* **Mapeamento Espacial de Zonas:** Transforma as coordenadas $(X, Y)$ da entrada em quadrantes/zonas do campo (ex: *Zona Defensiva*, *Terço Médio*, *Corredor Lateral*, *Zona de Ataque*).
+* **Mapeamento Espacial de Zonas:** Transforma as coordenadas (X, Y) da entrada em quadrantes/zonas do campo (ex: *Zona Defensiva*, *Terço Médio*, *Corredor Lateral*, *Zona de Ataque*).
 * **Cálculo Físico-Geométrico:**
-  * Distância Euclidiana: $d = \sqrt{(X_2 - X_1)^2 + (Y_2 - Y_1)^2}$
-  * Vetor Direcional: Variação $\Delta X$ (avanço ou recuo) e $\Delta Y$ (mudança de corredor).
+  * Distância Euclidiana: d = √((X_2 - X_1)^2 + (Y_2 - Y_1)^2)
+  * Vetor Direcional: Variação ΔX (avanço ou recuo) e ΔY (mudança de corredor).
 * **Classificação Qualitativa do Passe:**
-  * $d \le 15\text{m}$: Classificado como `PASSE_CURTO`.
-  * $15\text{m} < d \le 30\text{m}$: Classificado como `PASSE_MEDIO`.
-  * $d > 30\text{m}$: Classificado como `LANCAMENTO`.
+  * d ≤ 15m: Classificado como `PASSE_CURTO`.
+  * 15m < d ≤ 30m: Classificado como `PASSE_MEDIO`.
+  * d > 30m: Classificado como `LANCAMENTO`.
 * **Árvore de Derivação Anotada:** Decora cada nó com seus atributos semânticos sintetizados (`origem_zona`, `destino_zona`, `distancia`, `classificacao`).
 
 ### 2.4 Modularidade da Entrada: Modo Arquivo vs. Modo Memória (Stream)
@@ -134,7 +134,7 @@ Para garantir a entrega no prazo com excelência e sem riscos de atraso, o proje
 ### 3.2 Fase 2: Evolução e Avanços Posteriores
 Uma vez que o núcleo da Fase 1 esteja estável e testado, novos recursos podem ser plugados modularmente:
 1. **Tipos Complexos de Lances:**
-   * **Cruzamento:** Quando a origem é lateral ($Y < 20$ ou $Y > 60$) e o destino é a grande área adversária ($X > 100$).
+   * **Cruzamento:** Quando a origem é lateral (Y < 20 ou Y > 60) e o destino é a grande área adversária (X > 100).
    * **Finalização:** Registro de chute a gol com atributo booleano de resultado (gol, defesa, fora).
 2. **Classificação Tática de Alto Nível:**
    * Regra semântica que analisa o conjunto do lance: se houver 3 passes verticais sucessivos em menos de 10 segundos, anota o lance inteiro como *"Construção de Contra-Ataque Rápido"*.
@@ -151,9 +151,9 @@ Exemplo da tabela exigida no item **4.c** do PDF (Tradução Dirigida pela Sinta
 
 | Produção Gramatical | Ação Semântica Associada |
 | :--- | :--- |
-| $\text{Passo} \rightarrow \text{PASSE} \;\; \text{ID}_1 \;\; \text{COORD}_1 \;\; \text{"->"} \;\; \text{ID}_2 \;\; \text{COORD}_2$ | $\Delta X = \text{COORD}_2.x - \text{COORD}_1.x$<br>$\text{dist} = \text{calcular\_distancia}(\text{COORD}_1, \text{COORD}_2)$<br>$\text{tipo} = \text{classificar\_passe}(\text{dist})$<br>$\text{dir} = \text{"para frente" if } \Delta X > 0 \text{ else "recuo"}$<br>$\text{Passo.traducao} = \text{formatar}(\text{ID}_1, \text{tipo}, \text{dir}, \text{ID}_2)$ |
-| $\text{SequenciaPasses}_1 \rightarrow \text{SequenciaPasses}_2 \;\; \text{Passo}$ | $\text{SequenciaPasses}_1.\text{lista} = \text{SequenciaPasses}_2.\text{lista} + [\text{Passo.traducao}]$ |
-| $\text{Lance} \rightarrow \text{CABECALHO} \;\; \text{SequenciaPasses}$ | $\text{Lance.relatorio} = \text{gerar\_relatorio}(\text{CABECALHO}, \text{SequenciaPasses}.\text{lista})$ |
+| Passo → PASSE \;\; ID_1 \;\; COORD_1 \;\; "->" \;\; ID_2 \;\; COORD_2 | ΔX = COORD_2.x - COORD_1.x<br>dist = calcular_distancia(COORD_1, COORD_2)<br>tipo = classificar_passe(dist)<br>dir = "para frente" if  ΔX > 0  else "recuo"<br>Passo.traducao = formatar(ID_1, tipo, dir, ID_2) |
+| SequenciaPasses_1 → SequenciaPasses_2 \;\; Passo | SequenciaPasses_1.lista = SequenciaPasses_2.lista + [Passo.traducao] |
+| Lance → CABECALHO \;\; SequenciaPasses | Lance.relatorio = gerar_relatorio(CABECALHO, SequenciaPasses.lista) |
 
 ---
 
