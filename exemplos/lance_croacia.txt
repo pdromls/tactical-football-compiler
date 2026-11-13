@@ -1,0 +1,5 @@
+LANCE [14:20 - 14:35] {
+    PASSE "Luka Modrić" (25.4, 40.2) -> "Mateo Kovačić" (38.2, 42.1);
+    PASSE "Mateo Kovačić" (38.2, 42.1) -> "Ivan Perišić" (85.0, 18.5);
+    FINALIZACAO "Andrej Kramarić" (108.5, 39.8) RESULTADO GOL;
+}

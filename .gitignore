@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*.class
+parsetab.py
+parser.out
+.vscode/
+.venv/
+Prova/
+_temp_*.html

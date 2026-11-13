@@ -1,0 +1,4 @@
+# Exemplo de entrada inválida (ausência da seta '->' e ponto-e-vírgula) para demonstrar p_error
+LANCE [10:00 - 10:12] {
+    PASSE "Luka Modrić" (25.4, 40.2) "Mateo Kovačić" (38.2, 42.1)
+}
