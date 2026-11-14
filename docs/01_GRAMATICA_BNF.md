@@ -152,7 +152,7 @@ O mesmo vale para `<Jogada>`: `<Jogada> ⇒ TABELA J J { <SequenciaAcoes> } ⇒�
 
 **(b) Prova de que `L(G)` não é regular.** Considere a linguagem regular:
 
-`R = LANCE [T - T] {*} PASSE J (N,N) -> J (N,N) ; }*`
+`R = LANCE [T - T] {* PASSE J (N,N) -> J (N,N) ; }*`
 
 1. As linguagens regulares são fechadas sob interseção. Logo, se `L(G)` fosse regular, `L(G) ∩ R` também seria.
 2. Pela gramática, as chaves precisam estar balanceadas, então `L(G) ∩ R = { LANCE [T-T] {^n PASSE...; }^n | n >= 1 }`.

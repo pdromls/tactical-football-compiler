@@ -13,7 +13,7 @@ Este repositório contém a especificação formal e a implementação de um **C
 * **Elementos táticos recursivos** com regra semântica própria: `TABELA`, `TRIANGULACAO`, `CONTRA_ATAQUE` (podem conter uns aos outros);
 * **Ações atômicas recursivas:** passe encadeado `PASSE "A" (x,y) -> "B" (x,y) -> "C" (x,y);` (recursão à esquerda, com atributo herdado) e finalização com `REBOTE` (recursão à direita);
 * **Campo por equipe:** as coordenadas estão no referencial de quem executa a ação. O relatório mostra cada zona nas duas perspectivas (`Ataque Direito (Croatia) = Defesa Esquerda (Brazil)`), com o cabeçalho opcional `"Croatia" VS "Brazil"`;
-* Gramática LALR(1) com **31 produções e 0 conflitos**; 14 testes do compilador + 6 do extrator;
+* Gramática LALR(1) com **31 produções e 0 conflitos**; 18 testes do compilador + 6 do extrator;
 * No código, as marcações `[NOVO]` / `[MODIFICADO]` / `[PLY]` indicam o que foi criado ou adaptado em relação ao exemplo calc do PLY.
 
 ---

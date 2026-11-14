@@ -60,6 +60,11 @@ def identificar_zona(x: float, y: float) -> str:
     return f"Defesa {corredor_fem}"
 
 
+def com_preposicao(zona: str) -> str:
+    """[NOVO] Concordância: 'na Defesa Central' / 'na Grande Área', mas 'no Ataque' / 'no Meio-Campo'."""
+    return f"no {zona}" if zona.startswith(("Ataque", "Meio-Campo")) else f"na {zona}"
+
+
 def espelhar(coord: tuple) -> tuple:
     """[NOVO] Converte uma coordenada para o referencial do time adversário (rotação 180°)."""
     return (round(COMPRIMENTO_CAMPO - coord[0], 2), round(LARGURA_CAMPO - coord[1], 2))
@@ -132,6 +137,11 @@ def classificar_passe(
 def tempo_para_segundos(tempo_str: str) -> int:
     """Converte string 'MM:SS' em total de segundos."""
     minutos, segundos = map(int, tempo_str.split(':'))
+    # [NOVO] O léxico aceita \d{2} nos segundos; aqui a semântica exige 00..59
+    if segundos >= 60:
+        raise ValueError(
+            f"Erro Semântico: Tempo '{tempo_str}' inválido (segundos devem estar entre 00 e 59)."
+        )
     return minutos * 60 + segundos
 
 
@@ -158,8 +168,33 @@ def apenas_passes(acoes: list) -> list:
     return [a for a in acoes if a["tipo_acao"] == "PASSE"]
 
 
+def validar_jogada_uma_equipe(nome_jogada: str, acoes: list) -> None:
+    """
+    [NOVO] Uma jogada tática (TABELA, TRIANGULACAO, CONTRA_ATAQUE) pertence a UMA
+    equipe: não pode conter TROCA_POSSE nem ações de times diferentes. Sem esta
+    regra, um CONTRA_ATAQUE com troca de posse somaria coordenadas de referenciais
+    diferentes (o ataque de um time é a defesa do outro).
+    """
+    if any(a["tipo_acao"] == "TROCA_POSSE" for a in acoes):
+        raise ValueError(
+            f"Erro Semântico: {nome_jogada} não pode conter TROCA_POSSE "
+            "(uma jogada tática pertence a uma única equipe)."
+        )
+    equipes = {a["equipe"] for a in acoes if a.get("equipe")}
+    if len(equipes) > 1:
+        raise ValueError(
+            f"Erro Semântico: {nome_jogada} mistura ações de equipes diferentes "
+            f"({', '.join(sorted(equipes))})."
+        )
+
+
 def validar_tabela(jogador_a: str, jogador_b: str, acoes: list) -> None:
     """[NOVO] TABELA A B: os 2 primeiros passes devem ser A -> B e B -> A."""
+    if jogador_a == jogador_b:
+        raise ValueError(
+            f"Erro Semântico: TABELA exige dois jogadores diferentes (recebeu \"{jogador_a}\" duas vezes)."
+        )
+    validar_jogada_uma_equipe("TABELA", acoes)
     passes = apenas_passes(acoes)
     if (
         len(passes) < 2
@@ -174,6 +209,7 @@ def validar_tabela(jogador_a: str, jogador_b: str, acoes: list) -> None:
 
 def validar_triangulacao(acoes: list) -> None:
     """[NOVO] TRIANGULACAO: >= 3 passes envolvendo exatamente 3 jogadores distintos."""
+    validar_jogada_uma_equipe("TRIANGULACAO", acoes)
     passes = apenas_passes(acoes)
     envolvidos = {p["autor"] for p in passes} | {p["receptor"] for p in passes}
     if len(passes) < 3 or len(envolvidos) != 3:
@@ -185,6 +221,7 @@ def validar_triangulacao(acoes: list) -> None:
 
 def validar_contra_ataque(acoes: list) -> float:
     """[NOVO] CONTRA_ATAQUE: avanço em X >= 40 m usando no máximo 6 passes."""
+    validar_jogada_uma_equipe("CONTRA_ATAQUE", acoes)
     passes = apenas_passes(acoes)
     if not passes:
         raise ValueError("Erro Semântico: CONTRA_ATAQUE precisa de pelo menos um passe.")
@@ -245,6 +282,7 @@ def gerar_relatorio_final(intervalo: dict, confronto, acoes: list) -> dict:
     equipes_participantes = []
     ultimo_timestamp = segundos_para_tempo(t_ini)
     troca_pendente = None   # (equipe_que_perdeu, equipe_que_recuperou, timestamp)
+    equipe_esperada = None  # [NOVO] equipe anunciada pelo último TROCA_POSSE
     ultima_bola = None      # última ação de bola (para checar continuidade)
     idx_bola = 0
 
@@ -271,6 +309,7 @@ def gerar_relatorio_final(intervalo: dict, confronto, acoes: list) -> dict:
 
         if tipo_acao == "TROCA_POSSE":
             nova_eq = acao["nova_equipe"]
+            equipe_esperada = nova_eq
             if equipe_atual and equipe_atual != nova_eq:
                 troca_pendente = (equipe_atual, nova_eq, ultimo_timestamp)
             equipe_atual = nova_eq
@@ -295,6 +334,14 @@ def gerar_relatorio_final(intervalo: dict, confronto, acoes: list) -> dict:
             acao["equipe"] = equipe_acao
             if equipe_acao not in equipes_participantes:
                 equipes_participantes.append(equipe_acao)
+
+            # [NOVO] Depois de TROCA_POSSE "Y", a próxima ação de bola tem de ser de Y
+            if equipe_esperada is not None and equipe_acao != equipe_esperada:
+                raise ValueError(
+                    f"Erro Semântico: TROCA_POSSE \"{equipe_esperada}\" seguida de uma ação "
+                    f"de \"{equipe_acao}\" ({acao['autor']})."
+                )
+            equipe_esperada = None
 
             if troca_pendente and troca_pendente[1] == equipe_acao:
                 anunciar_troca(troca_pendente[0], equipe_acao, troca_pendente[2], acao)
@@ -348,7 +395,7 @@ def gerar_relatorio_final(intervalo: dict, confronto, acoes: list) -> dict:
             rebote = f" (rebote #{acao['tentativa'] - 1})" if acao.get("tentativa", 1) > 1 else ""
             linhas_acoes.append(
                 f"[{idx_bola}] ~{timestamp_str}{tag_equipe}{prefixo} - {acao['autor']}: "
-                f"Finalização{rebote} na {local}!\n"
+                f"Finalização{rebote} {com_preposicao(local)}!\n"
                 f"    Desfecho: {acao['desfecho']}"
             )
 
@@ -367,12 +414,12 @@ def gerar_relatorio_final(intervalo: dict, confronto, acoes: list) -> dict:
         )
         if ultima["tipo_acao"] == "FINALIZACAO":
             resumo = (
-                f"Progressão vertical iniciando na {zona_inicial} e culminando "
+                f"Progressão vertical iniciando {com_preposicao(zona_inicial)} e culminando "
                 f"em {ultima['desfecho'].rstrip('!')}{eq_fim}.{info_trocas}"
             )
         else:
             resumo = (
-                f"Progressão tática iniciando na {zona_inicial} e avançando até "
+                f"Progressão tática iniciando {com_preposicao(zona_inicial)} e avançando até "
                 f"{ultima['zona_dest']}{eq_fim} ({n_acoes_bola} ações registradas).{info_trocas}"
             )
     else:

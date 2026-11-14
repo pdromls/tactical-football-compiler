@@ -65,9 +65,9 @@ O projeto atende com precisão a todos os critérios e entregáveis exigidos no 
 ### 2.2 Análise Sintática (`ply.yacc`)
 * **Gramática Livre de Contexto (BNF):**
   * Modela a estrutura estrita de um lance válido:
-    Lance → CabecalhoTempo \;\; SequenciaPasses \;\; Fim
-    SequenciaPasses → SequenciaPasses \;\; Passo \;|\; Passo
-    Passo → PASSE \;\; JOGADOR \;\; COORD \;\; "->" \;\; JOGADOR \;\; COORD
+    Lance → CabecalhoTempo  SequenciaPasses  Fim
+    SequenciaPasses → SequenciaPasses  Passo | Passo
+    Passo → PASSE  JOGADOR  COORD  "->"  JOGADOR  COORD
 * **Árvore de Derivação (Parse Tree):** Atende diretamente ao item **4.d** do regulamento, evidenciando como a sentença de entrada se deriva a partir do símbolo inicial da gramática.
 
 ### 2.3 Análise Semântica & Tradução Dirigida pela Sintaxe (SDT)
@@ -151,9 +151,9 @@ Exemplo da tabela exigida no item **4.c** do PDF (Tradução Dirigida pela Sinta
 
 | Produção Gramatical | Ação Semântica Associada |
 | :--- | :--- |
-| Passo → PASSE \;\; ID_1 \;\; COORD_1 \;\; "->" \;\; ID_2 \;\; COORD_2 | ΔX = COORD_2.x - COORD_1.x<br>dist = calcular_distancia(COORD_1, COORD_2)<br>tipo = classificar_passe(dist)<br>dir = "para frente" if  ΔX > 0  else "recuo"<br>Passo.traducao = formatar(ID_1, tipo, dir, ID_2) |
-| SequenciaPasses_1 → SequenciaPasses_2 \;\; Passo | SequenciaPasses_1.lista = SequenciaPasses_2.lista + [Passo.traducao] |
-| Lance → CABECALHO \;\; SequenciaPasses | Lance.relatorio = gerar_relatorio(CABECALHO, SequenciaPasses.lista) |
+| Passo → PASSE  ID_1  COORD_1  "->"  ID_2  COORD_2 | ΔX = COORD_2.x - COORD_1.x<br>dist = calcular_distancia(COORD_1, COORD_2)<br>tipo = classificar_passe(dist)<br>dir = "para frente" if  ΔX > 0  else "recuo"<br>Passo.traducao = formatar(ID_1, tipo, dir, ID_2) |
+| SequenciaPasses_1 → SequenciaPasses_2  Passo | SequenciaPasses_1.lista = SequenciaPasses_2.lista + [Passo.traducao] |
+| Lance → CABECALHO  SequenciaPasses | Lance.relatorio = gerar_relatorio(CABECALHO, SequenciaPasses.lista) |
 
 ---
 

@@ -12,9 +12,18 @@ Valida:
   8. [NOVO] Perspectiva de campo por equipe (ataque de um = defesa do outro).
 """
 
+import sys
 import unittest
+from pathlib import Path
+
+# [NOVO] Permite rodar os testes de qualquer diretório (inclusive de dentro de tests/)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 from src.compilador import CompiladorTatico
 from src.semantico import identificar_zona, espelhar, zona_para_adversario, classificar_passe, calcular_distancia
+
+# [NOVO] Caminho absoluto: os testes funcionam de qualquer diretório
+EXEMPLOS = Path(__file__).resolve().parent.parent / "exemplos"
 
 
 class TestCompiladorTatico(unittest.TestCase):
@@ -139,7 +148,7 @@ class TestCompiladorTatico(unittest.TestCase):
 
     def test_jogadas_recursivas_aninhadas(self):
         """TABELA dentro de CONTRA_ATAQUE: rótulo hierárquico e validação em cada nível."""
-        res = self.compilador.compilar_arquivo("exemplos/lance_recursivo.txt")
+        res = self.compilador.compilar_arquivo(EXEMPLOS / "lance_recursivo.txt")
         self.assertIn("Tabela", res["acoes"][2]["jogada"])
         self.assertTrue(res["acoes"][2]["jogada"].startswith("Contra-ataque"))
 
@@ -161,7 +170,7 @@ class TestCompiladorTatico(unittest.TestCase):
         self.assertEqual(zona_para_adversario((110.0, 40.0)), "Grande Área de Defesa")
 
     def test_confronto_e_troca_de_posse(self):
-        res = self.compilador.compilar_arquivo("exemplos/lance_troca_posse.txt")
+        res = self.compilador.compilar_arquivo(EXEMPLOS / "lance_troca_posse.txt")
         self.assertEqual(res["confronto"], ["Croatia", "Brazil"])
         self.assertEqual(res["trocas_de_posse"], 1)
         brasil = [a for a in res["acoes"] if a["equipe"] == "Brazil"][0]
@@ -188,6 +197,37 @@ class TestCompiladorTatico(unittest.TestCase):
             'FINALIZACAO "C" (108, 40) RESULTADO FORA; }'
         )
         self.assertEqual(len(res["avisos"]), 1)
+
+    # ------------------------------------------------------------------
+    # [NOVO] Revisão de 13/11: verificações semânticas adicionais
+    # ------------------------------------------------------------------
+
+    def test_segundos_invalidos(self):
+        with self.assertRaises(ValueError):
+            self.compilador.compilar_texto('LANCE [14:75 - 14:80] { PASSE "A" (30, 40) -> "B" (45, 40); }')
+
+    def test_tabela_exige_jogadores_diferentes(self):
+        with self.assertRaises(ValueError):
+            self.compilador.compilar_texto(
+                'LANCE [1:00 - 1:10] { TABELA "A" "A" { PASSE "A" (50, 40) -> "A" (55, 40) -> "A" (60, 40); } }'
+            )
+
+    def test_jogada_nao_atravessa_troca_de_posse(self):
+        """CONTRA_ATAQUE não pode misturar referenciais de dois times."""
+        with self.assertRaises(ValueError):
+            self.compilador.compilar_texto(
+                'LANCE [1:00 - 1:10] "X" VS "Y" { CONTRA_ATAQUE { '
+                'POSSE "X" { PASSE "A" (20, 40) -> "B" (90, 40); } TROCA_POSSE "Y"; '
+                'POSSE "Y" { PASSE "C" (30, 40) -> "D" (70, 40); } } }'
+            )
+
+    def test_troca_de_posse_inconsistente(self):
+        """Depois de TROCA_POSSE "Y", a próxima ação tem de ser de Y."""
+        with self.assertRaises(ValueError):
+            self.compilador.compilar_texto(
+                'LANCE [1:00 - 1:10] "X" VS "Y" { POSSE "X" { PASSE "A" (20, 40) -> "B" (60, 40); } '
+                'TROCA_POSSE "Y"; POSSE "X" { PASSE "B" (60, 40) -> "C" (70, 40); } }'
+            )
 
 
 if __name__ == "__main__":

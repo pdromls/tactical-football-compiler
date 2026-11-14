@@ -27,16 +27,16 @@ Integrando o plano cartesiano do StatsBomb (X ∈ [0, 120] e Y ∈ [0, 80]) com 
 
 ### Regras Cartesianas de Delimitação das Zonas:
 1. **Grande Área de Ataque (Prioridade 1):** 102.0 ≤ X ≤ 120.0 e 18.0 ≤ Y ≤ 62.0 (Zona crítica de finalização).
-2. **Grande Área de Defesa (Prioridade 1):** topo-2.0 ≤ X ≤ 18.0 e 18.0 ≤ Y ≤ 62.0$ (Zona crítica do goleiro/zaga).
-3. **Ataque Esquerdo:** 80.0 ≤ X ≤ 120.0 e topo-2.0 ≤ Y < 25.0$.
+2. **Grande Área de Defesa (Prioridade 1):** 0.0 ≤ X ≤ 18.0 e 18.0 ≤ Y ≤ 62.0 (Zona crítica do goleiro/zaga).
+3. **Ataque Esquerdo:** 80.0 ≤ X ≤ 120.0 e 0.0 ≤ Y < 25.0.
 4. **Ataque Central:** 80.0 ≤ X < 102.0 e 25.0 ≤ Y ≤ 55.0 (fora da grande área).
 5. **Ataque Direito:** 80.0 ≤ X ≤ 120.0 e 55.0 < Y ≤ 80.0.
-6. **Meio-Campo Esquerdo:** 40.0 ≤ X < 80.0 e topo-2.0 ≤ Y < 25.0$.
+6. **Meio-Campo Esquerdo:** 40.0 ≤ X < 80.0 e 0.0 ≤ Y < 25.0.
 7. **Meio-Campo Central:** 40.0 ≤ X < 80.0 e 25.0 ≤ Y ≤ 55.0 (Círculo central).
 8. **Meio-Campo Direito:** 40.0 ≤ X < 80.0 e 55.0 < Y ≤ 80.0.
-9. **Defesa Esquerda:** topo-2.0 ≤ X < 40.0 e topo-2.0 ≤ Y < 25.0.
+9. **Defesa Esquerda:** 0.0 ≤ X < 40.0 e 0.0 ≤ Y < 25.0.
 10. **Defesa Central:** 18.0 < X < 40.0 e 25.0 ≤ Y ≤ 55.0 (fora da grande área defensiva).
-11. **Defesa Direita:** topo-2.0 ≤ X < 40.0 e 55.0 < Y ≤ 80.0$.
+11. **Defesa Direita:** 0.0 ≤ X < 40.0 e 55.0 < Y ≤ 80.0.
 
 ---
 

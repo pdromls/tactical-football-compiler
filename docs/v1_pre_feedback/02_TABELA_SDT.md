@@ -32,7 +32,7 @@ Avaliada com prioridade estrita para as Grandes Áreas:
 
 1. **Prioridade Máxima (Zonas Críticas):**
    * Se 102.0 ≤ x ≤ 120.0 e 18.0 ≤ y ≤ 62.0 \implies "Grande Área de Ataque"
-   * Se topo-2.0 ≤ x ≤ 18.0 e 18.0 ≤ y ≤ 62.0 \implies "Grande Área de Defesa"$
+   * Se 0.0 ≤ x ≤ 18.0 e 18.0 ≤ y ≤ 62.0 \implies "Grande Área de Defesa"$
 2. **Setor de Ataque (x ≥ 80.0):**
    * y < 25.0 \implies "Ataque Esquerdo"
    * 25.0 ≤ y ≤ 55.0 \implies "Ataque Central"
@@ -89,7 +89,7 @@ Na implementação com `ply.yacc`, cada símbolo do lado esquerdo da produção 
 | **13** | `<TrocaPosse> ::= TROCA_POSSE JOGADOR` | `<TrocaPosse>.info = { "tipo_acao": "TROCA_POSSE", "nova_equipe": JOGADOR.lexval }`<br>*(Registra a inversão de posse e do referencial espacial do campo)* |
 | **14** | `<Passe> ::= PASSE JOGADOR_1 <Coordenada>_1 '->' JOGADOR_2 <Coordenada>_2` | d = dist(<Coordenada>_1.val, <Coordenada>_2.val)<br>ΔX = <Coordenada>_2.x - <Coordenada>_1.x<br>ΔY = <Coordenada>_2.y - <Coordenada>_1.y<br>z_o = zona(<Coordenada>_1.x, <Coordenada>_1.y)<br>z_d = zona(<Coordenada>_2.x, <Coordenada>_2.y)<br>(tipo, dir) = classificarPasse(d, z_o, z_d, ΔX)<br>`<Passe>.info = { "tipo_acao": "PASSE", "autor": JOGADOR_1.lexval, "receptor": JOGADOR_2.lexval, "coord_orig": <Coordenada>_1.val, "coord_dest": <Coordenada>_2.val, "distancia": round(d, 1), "zona_orig": z_o, "zona_dest": z_d, "classificacao": tipo, "direcao": dir }` |
 | **15** | `<Finalizacao> ::= FINALIZACAO JOGADOR <Coordenada> RESULTADO <Desfecho>` | z_o = zona(<Coordenada>.x, <Coordenada>.y)<br>`<Finalizacao>.info = { "tipo_acao": "FINALIZACAO", "autor": JOGADOR.lexval, "coord_orig": <Coordenada>.val, "zona_orig": z_o, "zona_dest": z_o, "desfecho": <Desfecho>.val }` |
-| **16** | `<Coordenada> ::= '(' NUM_1 ',' NUM_2 ')'` | Verifica topo-2 ≤ NUM_1 ≤ 120 e topo-2 ≤ NUM_2 ≤ 80;<br>`<Coordenada>.x = float(NUM_1.lexval)`<br>`<Coordenada>.y = float(NUM_2.lexval)`<br>`<Coordenada>.val = (float(NUM_1.lexval), float(NUM_2.lexval))` |
+| **16** | `<Coordenada> ::= '(' NUM_1 ',' NUM_2 ')'` | Verifica 0 ≤ NUM_1 ≤ 120 e 0 ≤ NUM_2 ≤ 80;<br>`<Coordenada>.x = float(NUM_1.lexval)`<br>`<Coordenada>.y = float(NUM_2.lexval)`<br>`<Coordenada>.val = (float(NUM_1.lexval), float(NUM_2.lexval))` |
 | **17** | `<Desfecho> ::= GOL` | `<Desfecho>.val = "GOL!"` |
 | **18** | `<Desfecho> ::= DEFESA` | `<Desfecho>.val = "DEFESA DO GOLEIRO!"` |
 | **19** | `<Desfecho> ::= FORA` | `<Desfecho>.val = "PARA FORA!"` |

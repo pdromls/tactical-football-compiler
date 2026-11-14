@@ -139,7 +139,7 @@ Se você quer que **exatamente o que construímos aqui** (a tradução de coorde
 * **Conexão direta com o nosso projeto:** Em Aprendizado por Reforço, um MDP precisa de um conjunto discreto de **Estados (S)** e um conjunto discreto de **Ações (A)**. O nosso compilador já faz exatamente isso:
   * **Estados (S):** As **11 zonas táticas** do campo;
   * **Ações (A):** As classificações semânticas do nosso compilador (`Passe Curto p/ Frente`, `Passe Curto Recuo`, `Passe Médio`, `Inversão Lateral`, `Lançamento Longo`, `Cruzamento`, `Finalização`);
-  * **Recompensa (R):** +1 se a posse termina em `GOL`, topo-2 se termina em `TROCA_POSSE`.
+  * **Recompensa (R):** +1 se a posse termina em `GOL`, 0 se termina em `TROCA_POSSE`.
 * **O que o TCC faz:** Resolve a Equação de Bellman (*Value Iteration* / *Q-Learning* offline sobre os dados da StatsBomb) para descobrir a **Política Ótima \pi^*(s)** em cada zona do campo e cria uma métrica inédita para avaliar jogadores: a **Taxa de Decisão Ótima (*Optimal Decision Rate*)** — medindo quem toma as decisões matematicamente mais inteligentes sob pressão.
 
 ### Ideia 10: Análise de Sobrevivência (*Survival Analysis*) da Posse de Bola e Risco de *Turnover* (`TROCA_POSSE`)

@@ -77,7 +77,7 @@ Em **três** lugares, com papéis diferentes:
 * **Sem conflito LALR(1):** após `DEFESA`, se o próximo token for `;`, é `<Desfecho>` (#29). Se for `REBOTE`, é `<DesfechoParcial>` (#25).
 
 ### 3. "O que é o atributo herdado da sua SDT?"
-Em `<CadeiaPasse> → SETA JOGADOR <Coordenada>` (#21), o **autor** e a **origem** do primeiro passe não estão nesta produção. Eles estão nos irmãos à esquerda, na produção #20 (`PASSE JOGADOR <Coordenada> <CadeiaPasse>`). Como o parser LR já empilhou esses irmãos, a ação os lê com `p[-2]` e `p[-1]`, o equivalente ao `topo-2` do Bison. Um atributo que vem do pai ou dos irmãos à esquerda é **herdado**, por isso a definição é **L-atribuída**.
+Em `<CadeiaPasse> → SETA JOGADOR <Coordenada>` (#21), o **autor** e a **origem** do primeiro passe não estão nesta produção. Eles estão nos irmãos à esquerda, na produção #20 (`PASSE JOGADOR <Coordenada> <CadeiaPasse>`). Como o parser LR já empilhou esses irmãos, a ação os lê com `p[-2]` e `p[-1]`, o equivalente ao `$0` do Bison. Um atributo que vem do pai ou dos irmãos à esquerda é **herdado**, por isso a definição é **L-atribuída**.
 
 ### 4. "O campo de ataque do Brasil é o mesmo da Croácia?"
 **Não.** Cada coordenada está no referencial **do time que executa a ação**, como na StatsBomb: X = 120 é sempre o gol adversário de quem age. O mesmo ponto visto pelo adversário é **(120 − x, 80 − y)**. Por isso:
@@ -98,7 +98,7 @@ Em `<CadeiaPasse> → SETA JOGADOR <Coordenada>` (#21), o **autor** e a **origem
 | 1 | \<Lance\> → LANCE \<IntervaloTempo\> \<Confronto\> \<Bloco\> | sempre, na raiz | valida equipes × confronto; gera o relatório |
 | 2 | \<Confronto\> → JOGADOR VS JOGADOR | quando há `"A" VS "B"` | par de equipes (A ≠ B) |
 | 3 | \<Confronto\> → ε | quando não há cabeçalho | None |
-| 4 | \<IntervaloTempo\> → '[' TEMPO '-' TEMPO ']' | após LANCE | início, fim, duração (fim ≥ início) |
+| 4 | \<IntervaloTempo\> → '[' TEMPO '-' TEMPO ']' | após LANCE | início, fim, duração (segundos 00..59; fim ≥ início) |
 | 5 | \<Bloco\> → '{' Seq '}' | bloco anônimo | repassa a lista |
 | 6 | \<Bloco\> → FASE JOGADOR '{' Seq '}' | `FASE "Nome" {` | rotula a fase ("Externa > Interna") |
 | 7 | \<Bloco\> → POSSE JOGADOR '{' Seq '}' | `POSSE "Time" {` | define a equipe (e o referencial) das ações |
@@ -107,13 +107,13 @@ Em `<CadeiaPasse> → SETA JOGADOR <Coordenada>` (#21), o **autor** e a **origem
 | 10 | ElementoTatico → AcaoAtomica | linha com `;` | repassa a lista |
 | 11 | ElementoTatico → Bloco | sub-bloco | auto-incorporação |
 | 12 | ElementoTatico → Jogada | jogada nomeada | repassa a lista validada |
-| 13 | Jogada → TABELA JOGADOR JOGADOR '{' Seq '}' | `TABELA "A" "B" {` | valida A→B, B→A; rotula |
-| 14 | Jogada → TRIANGULACAO '{' Seq '}' | `TRIANGULACAO {` | valida 3 jogadores, ≥ 3 passes |
-| 15 | Jogada → CONTRA_ATAQUE '{' Seq '}' | `CONTRA_ATAQUE {` | valida avanço ≥ 40 m em ≤ 6 passes |
+| 13 | Jogada → TABELA JOGADOR JOGADOR '{' Seq '}' | `TABELA "A" "B" {` | valida A ≠ B, A→B, B→A, uma só equipe; rotula |
+| 14 | Jogada → TRIANGULACAO '{' Seq '}' | `TRIANGULACAO {` | valida 3 jogadores, ≥ 3 passes, uma só equipe |
+| 15 | Jogada → CONTRA_ATAQUE '{' Seq '}' | `CONTRA_ATAQUE {` | valida avanço ≥ 40 m em ≤ 6 passes, uma só equipe |
 | 16 | AcaoAtomica → Passe ';' | linha PASSE | lista de passes |
 | 17 | AcaoAtomica → Finalizacao ';' | linha FINALIZACAO | lista de chutes |
 | 18 | AcaoAtomica → TrocaPosse ';' | linha TROCA_POSSE | [troca] |
-| 19 | TrocaPosse → TROCA_POSSE JOGADOR | `TROCA_POSSE "Time"` | nova equipe com a posse |
+| 19 | TrocaPosse → TROCA_POSSE JOGADOR | `TROCA_POSSE "Time"` | nova equipe com a posse (a próxima ação tem de ser dela) |
 | 20 | Passe → PASSE JOGADOR Coordenada CadeiaPasse | `PASSE "A" (x,y) -> ...` | lista de passes da cadeia |
 | 21 | CadeiaPasse → SETA JOGADOR Coordenada | 1º elo | **herda** autor/origem; calcula P1 |
 | 22 | CadeiaPasse → CadeiaPasse SETA JOGADOR Coordenada | elos seguintes | passe a partir do último receptor |
