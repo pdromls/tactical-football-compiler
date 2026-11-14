@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+[NOVO] Script auxiliar da documentação (não faz parte do compilador).
 Gera as figuras das árvores de derivação anotadas (estilo quadro da professora)
 para a gramática ATUAL (31 produções). Os valores das anotações são calculados
 com as próprias funções de src/semantico.py, para nunca divergirem do compilador.

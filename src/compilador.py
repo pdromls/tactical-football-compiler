@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Fachada Modular do Compilador Tático de Futebol.
+[NOVO] Arquivo inteiro criado para este trabalho (não existe no exemplo calc do PLY).
 Permite compilar lances tanto a partir de arquivos em disco (.txt / .match)
 quanto a partir de strings em memória (integração com API StatsBomb).
 """
@@ -16,6 +17,7 @@ class CompiladorTatico:
     """
 
     def __init__(self):
+        # [PLY] lex.lex() e yacc.yacc() constroem o analisador léxico e o LALR(1)
         self.lexer = criar_lexer()
         self.parser = criar_parser()
 

@@ -162,6 +162,23 @@ O mesmo vale para `<Jogada>`: `<Jogada> ⇒ TABELA J J { <SequenciaAcoes> } ⇒�
 
 **Significado no domínio:** a pilha guarda o contexto tático em aberto. Por exemplo, um `CONTRA_ATAQUE` que contém uma `TABELA` que contém um sub-bloco. Ao fechar cada `}`, o parser sabe exatamente qual jogada está sendo concluída e aplica a regra semântica dela.
 
+### 4.4 Precedência e eliminação de ambiguidade
+
+**Por que não há tabela `precedence` no `ply.yacc`:** no exemplo calc, a precedência é necessária porque a gramática de expressões (`expr : expr '+' expr | expr '*' expr`) é **ambígua**, e o PLY usa `precedence` para resolver os conflitos *shift/reduce*. A DSL tática **não tem operadores binários**: cada construção começa com uma palavra reservada (`PASSE`, `FINALIZACAO`, `TABELA`…) ou com um delimitador (`{`), o que já determina qual produção usar.
+
+**Prova de que não é ambígua:** o PLY gera as tabelas LALR(1) com **0 conflitos *shift/reduce* e 0 conflitos *reduce/reduce***. Toda gramática LALR(1) sem conflitos é **não ambígua**, porque cada sentença tem uma única derivação mais à direita. Logo, a precedência não foi necessária.
+
+**Pontos que poderiam gerar ambiguidade e como foram resolvidos:**
+
+| Ponto | Risco | Solução |
+| :--- | :--- | :--- |
+| `DEFESA` / `TRAVE` em `<Desfecho>` (#29, #31) e em `<DesfechoParcial>` (#25, #26) | conflito *reduce/reduce* | **lookahead**: com `;` reduz para `<Desfecho>`; com `REBOTE` reduz para `<DesfechoParcial>` |
+| Lista de ações (#8) | recursão à esquerda × à direita | recursão **à esquerda**, sem ambiguidade e com pilha constante |
+| `->` e o literal `-` | ambiguidade **léxica** | o PLY testa as regex por tamanho: `->` (SETA) antes de `-` |
+| `14:20` | `TEMPO` ou `NUM ':' NUM` | `t_TEMPO` definido antes de `t_NUM` |
+| Palavras reservadas × identificadores | `PASSE` lido como identificador | tabela `reserved` reclassifica o token; identificador desconhecido é **erro léxico** |
+| Cabeçalho `<Confronto>` opcional (#3, produção vazia) | conflito com o início de `<Bloco>` | `<Bloco>` nunca começa com `JOGADOR`, então o lookahead decide |
+
 ---
 
 ## 5. Convenção de coordenadas por equipe (importante para a semântica)

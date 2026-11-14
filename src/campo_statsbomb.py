@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Módulo Autônomo de Engenharia de Dados e Modelagem Espacial ('campo_statsbomb.py').
+[NOVO] Arquivo inteiro criado para este trabalho (não existe no exemplo calc do PLY).
 Realiza duas responsabilidades principais na arquitetura do Compilador Tático:
   1. Modelagem geométrica do campo (padrão 120x80 da StatsBomb) em 11 zonas táticas;
   2. Extração de eventos reais ('Pass' e 'Shot') de partidas via statsbombpy

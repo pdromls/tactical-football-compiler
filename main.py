@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 Ponto de entrada principal (CLI) do Compilador/Tradutor Tático de Futebol.
+[NOVO] Arquivo inteiro criado para este trabalho (não existe no exemplo calc do PLY).
+(Substitui o laço "calc >" de leitura do exemplo calc do PLY.)
 Suporta 3 modos de operação:
   1. Demonstração em memória (sem argumentos);
   2. Leitura de arquivo em disco (.txt / .match);
@@ -13,7 +15,7 @@ Exemplos de uso:
   python main.py exemplos/lance_aninhado_fase.txt --tokens
   python main.py exemplos/lance_recursivo.txt        (jogadas e ações recursivas)
   python main.py exemplos/lance_troca_posse.txt      (perspectiva de campo por equipe)
-  python main.py --match-id 3869253 --inicio 116:30 --fim 116:50 --mostrar-dsl
+  python main.py --match-id 3869420 --inicio 2:30 --fim 3:05 --mostrar-dsl
 """
 
 import argparse
@@ -52,7 +54,7 @@ def main():
     parser_cli.add_argument(
         "--match-id",
         type=int,
-        help="ID da partida no StatsBomb (ex: 3869253 para Croácia x Brasil na Copa 2022).",
+        help="ID da partida no StatsBomb (ex: 3869420 para Croácia x Brasil na Copa 2022).",
     )
     parser_cli.add_argument(
         "--inicio",
