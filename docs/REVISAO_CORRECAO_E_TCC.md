@@ -1,12 +1,12 @@
 # Revisão do Trabalho e Correção da Professora
 
-**Data:** 10/11/2026 · **Base:** `Trabalho Compiladores 2026_2.pdf` (enunciado), `src/`, `docs/`, `exemplos/`, `tests/`
+**Data:** 10/11/2026 · **Base:** enunciado da disciplina (PDF local, fora do repositório), `src/`, `docs/`, `exemplos/`, `tests/`
 
 ---
 
 ## 0. Situação atual
 
-* **Todas as correções foram aplicadas no código e nos documentos** (Seção 1). 14 testes do compilador + 6 do extrator passam. A gramática LALR(1) tem 31 produções e 0 conflitos.
+* **Todas as correções foram aplicadas no código e nos documentos** (Seção 1). 18 testes do compilador + 6 do extrator passam. A gramática LALR(1) tem 31 produções e 0 conflitos.
 * **Correção da professora implementada** (Seção 2): elementos táticos recursivos (`TABELA`, `TRIANGULACAO`, `CONTRA_ATAQUE`) e ações atômicas recursivas (passe encadeado e finalização com `REBOTE`).
 * **Campo por equipe** (Seção 3): o ataque de um time é a defesa do outro. Isso foi verificado nos dados reais da StatsBomb e agora é explícito no compilador.
 * **TCC:** a análise, a ideia recomendada e as 5 ideias novas estão em `IDEIAS_TCC_CIENCIA_DE_DADOS.md` (Partes 5 a 7).
@@ -76,7 +76,44 @@ As ideias de TCC (análise crítica das 15 ideias, a ideia recomendada detalhada
 
 ---
 
-## 5. Checklist antes do vídeo (25/11)
+## 5. Segunda revisão (13/11/2026, repositório `pdromls/tactical-football-compiler`)
+
+Revisão completa do repositório na versão v2.0: código, testes, exemplos, documentos e PDFs.
+
+**O que estava certo:**
+* gramática com 31 produções e 0 conflitos LALR;
+* todos os exemplos rodam;
+* a partida inteira Croácia x Brasil compila (0' a 125', 155 trocas de posse).
+
+**Bugs semânticos encontrados com testes de borda (corrigidos, com 4 testes novos):**
+
+| # | Entrada aceita indevidamente | Correção |
+| :-: | :--- | :--- |
+| 1 | `LANCE [14:75 - 14:80]` (segundos ≥ 60) | erro semântico em #4 |
+| 2 | `TABELA "A" "A" { … }` | erro semântico em #13 (exige A ≠ B) |
+| 3 | `CONTRA_ATAQUE` contendo `TROCA_POSSE` e passes dos dois times: o avanço somava coordenadas de **referenciais diferentes** | #13–#15 exigem uma única equipe e nenhuma `TROCA_POSSE` dentro da jogada |
+| 4 | `TROCA_POSSE "Y"` seguida de `POSSE "X"`: o relatório dizia "Y perdeu → X recuperou" | erro semântico na raiz: a próxima ação de bola tem de ser da equipe anunciada |
+
+**Outros ajustes:**
+* concordância no relatório ("**no** Meio-Campo Central", "**no** Ataque Central"; antes saía "na");
+* `main.py` trata falha de rede (partida fora de `data_cache/`) com mensagem própria;
+* os testes rodam de qualquer diretório (antes dependiam de serem chamados da raiz).
+
+**Documentos corrompidos pela conversão de LaTeX para Unicode (corrigidos):**
+* `$0` virou `topo-2` (PROMPT, 02, ENTREGA, MANUAL, IDEIAS, v1/02);
+* `\left(` virou `≤ft(`;
+* restos de `\frac`, `\mathbf`, `\;\;` (GUIA, PROPOSTA);
+* `$` soltos no PROMPT;
+* a linguagem regular `R` da prova de não-regularidade (01, §4.3) estava escrita como `{*}` em vez de `{*`.
+
+**Repositório:**
+* O PDF do enunciado da professora foi **retirado do repositório público** e incluído no `.gitignore`. A cópia local continua na pasta. Ele ainda existe nos commits antigos (v1.0 e v2.0); para apagá-lo do histórico, é preciso reescrever o histórico e forçar o push.
+* `matplotlib` foi adicionado ao `requirements.txt` como dependência opcional (só para `docs/gerar_arvores.py`).
+* Ponto em aberto: o gerador de PDFs (`Prova/generate_pdfs.py`) está em `Prova/`, que o `.gitignore` exclui. Quem clonar o repositório não consegue regenerar os PDFs de `docs/`.
+
+---
+
+## 6. Checklist antes do vídeo (25/11)
 
 - [x] Marcar no código o que foi criado/modificado
 - [x] Corrigir V, Σ, numeração e a prova de não-regularidade

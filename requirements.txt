@@ -1,2 +1,4 @@
 ply>=3.11
 statsbombpy>=1.13.0
+# Opcional: apenas para gerar as figuras das árvores (docs/gerar_arvores.py)
+matplotlib>=3.7
