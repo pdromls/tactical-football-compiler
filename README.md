@@ -30,8 +30,6 @@ tactical-football-compiler/
 │   ├── EXEMPLO_ARVORE_ESTILO_QUADRO_PROFESSORA.md # Árvore numerada [1]..[17]
 │   ├── arvore_estilo_professora.png / arvore_recursiva.png
 │   ├── gerar_arvores.py                   # Gera as figuras usando as funções do compilador
-│   ├── IDEIAS_TCC_CIENCIA_DE_DADOS.md     # Ideias de TCC (20 ideias, triagem e ideia recomendada)
-│   ├── REVISAO_CORRECAO_E_TCC.md          # Revisão e correção aplicada
 │   └── v1_pre_feedback/                   # Documentação original da v1.0 (20 produções) para comparação
 ├── src/                                   # Código-fonte modular do Compilador
 │   ├── __init__.py
@@ -49,9 +47,7 @@ tactical-football-compiler/
 ├── tests/                                 # Testes unitários automatizados
 │   └── test_compilador.py                 # Validação das 11 zonas, parser, SDT e erros
 ├── main.py                                # Interface de Linha de Comando (CLI)
-├── requirements.txt                       # Dependências do projeto
-├── PROPOSTA_TRABALHO_COMPILADORES.md      # Proposta original do trabalho
-└── PROMPT_IA_COMPILADORES.md              # Especificação dos prompts do projeto
+└── requirements.txt                       # Dependências do projeto
 ```
 
 ---
